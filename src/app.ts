@@ -242,7 +242,8 @@ form.addEventListener('submit', (event) => {
       }
       renderResults(config, currentResult);
       statusRegion.textContent = `Audit complete: ${currentResult.rows.length} expected windows computed.`;
-      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      results.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     } catch (error) {
       statusRegion.textContent = error instanceof Error ? error.message : 'The audit could not be computed. Check the inputs and try again.';
     } finally {
