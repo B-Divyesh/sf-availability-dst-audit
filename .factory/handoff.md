@@ -1,5 +1,9 @@
 # Availability DST Audit — build handoff
 
+## Independent verification status — FAIL
+
+Candidate `ed89d5e74fb3b4aa8b71abc805c1c57b65c7b43a` was independently verified against <https://availability-dst-audit.sociobot.in> on 2026-08-27. The live HTML and every deployed hashed asset are byte-identical to the candidate build, and core functionality/tests pass. **Do not release this candidate:** after an audit is populated, changing any configuration dims the stale matrix via `opacity: .42`; axe reports serious `color-contrast` violations (for example, table headings at 2.41:1). See [verification.md](verification.md) for reproduction, complete evidence, and the required fix.
+
 Work order: `availability-dst-audit-build-1`
 
 Completed: 27 August 2026
@@ -32,7 +36,7 @@ Verification performed against the production build served by `npm run preview`:
 - `npm test`: 7/7 unit and timezone fixture tests passed.
 - `npm run test:e2e`: 4/4 desktop and 390px Chromium tests passed, covering the audit, boundary matrix, persisted configuration, CSV/ICS downloads, legal pages, horizontal overflow, console errors, and axe checks.
 - `/opt/fleet/lib/verify-url.sh`: HTTP 200, title present, `lang="en"`, exactly one `h1`, main landmark present, zero images missing alt, zero unlabeled buttons, zero console/page errors.
-- Axe: zero serious or critical violations on the populated audit and both legal pages.
+- Builder-reported axe result is superseded by independent verification: the populated **stale** result state has serious contrast violations and causes the release FAIL. See [verification.md](verification.md).
 - Lighthouse mobile: **Performance 100, Accessibility 100, Best Practices 100, SEO 100**.
 - Lighthouse key metrics: **LCP 1.7s, CLS 0, Total Blocking Time 10ms, Speed Index 0.9s**.
 - Production asset sizes: **15.84 KB JS** (6.11 KB gzip), **13.76 KB CSS** (3.95 KB gzip), **139.03 KB WebP hero**; all remain below the factory budgets.
