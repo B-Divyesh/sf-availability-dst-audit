@@ -1,0 +1,8 @@
+{
+  "tool": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "A wide pixel-art demoscene illustration of a timezone observatory at night: two precise digital clock towers on opposite sides of a glowing stepped world-time grid, a bright amber daylight-saving boundary slicing through the grid, small green schedule blocks remaining aligned across it, deep ink-black and navy background, warm ivory highlights, signal green, boundary amber and icy cyan accents, crisp 1990s 16-bit pixel clusters, ordered dithering, technical yet humane, no people, no interface screenshot. Wide composition, quiet negative space. No text, no numbers, no logos, no watermark. Avoid generic SaaS gradients, illegible glyphs, brands, people, photorealism, blurry antialiasing, fake UI copy."
+}
