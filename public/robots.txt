@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://availability-dst-audit.sociobot.in/sitemap.xml

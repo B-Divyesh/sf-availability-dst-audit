@@ -1,0 +1,12 @@
+{
+  "slug": "availability-dst-audit",
+  "title": "Availability DST Audit",
+  "territory": "utilities",
+  "user": "A consultant, recruiter, or distributed team coordinator who needs proof that published booking availability respects intended local working hours across daylight-saving changes.",
+  "smallest_useful_product": "A static web tool that accepts weekly hours, IANA zones, and a date range, then renders overlap/DST boundary cases and exports an ICS/CSV expected-slot fixture.",
+  "success_measure": "For a known DST boundary fixture, it flags every intentionally shifted slot and produces an expected-slot table in under 30 seconds.",
+  "artifact_class": "static-web",
+  "monetization": "free",
+  "constraints": "Use the IANA timezone database; explain local-time ambiguity; do not claim parity with every vendor's proprietary availability logic.",
+  "state": "RESEARCHED"
+}
