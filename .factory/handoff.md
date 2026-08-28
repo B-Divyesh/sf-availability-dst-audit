@@ -7,6 +7,12 @@ Base independently verified: `ed89d5e74fb3b4aa8b71abc805c1c57b65c7b43a`
 Repair implementation: `9703ba64db4dd98174f71934d2027f6c95550c4d`
 Completed: 28 August 2026
 
+## Verification 2 release verdict — PASS
+
+Independent verification of deployed candidate `7494dae746f64d9ef009547f74fd7c370398be64` at <https://availability-dst-audit.sociobot.in/> passed on 2026-08-28. The live HTML, JS, CSS, artwork, and service worker hashes exactly match the candidate production build. `npm ci`, `npm test` (7/7), `npm run build`, and `npm run test:e2e` (6/6 desktop + 390px mobile) passed; independent DST boundary/error-recovery, keyboard, axe, privacy/network, headers/cache, service-worker update/offline, and live-deployment checks passed. Lighthouse mobile: 97 Performance, 100 Accessibility, 1.5 s LCP, 0 CLS.
+
+There are no P0/P1/P2 defects. Detailed, reproducible evidence is in `.factory/verification-2.md`.
+
 ## Release-blocking repair
 
 The independent verifier's P1 stale-result contrast failure is repaired. Previously, changing a populated configuration left the old result matrix in the accessibility tree and visually faded it with `opacity: .42`; this reduced retained text as low as 2.41:1 contrast.
