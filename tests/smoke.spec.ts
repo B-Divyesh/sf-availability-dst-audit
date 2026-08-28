@@ -10,9 +10,9 @@ test('runs a 2026 DST audit, persists config, and exports fixtures', async ({ pa
   await page.locator('#comparison-zone').fill('America/New_York');
   await page.locator('#start-date').fill('2026-03-23');
   await page.locator('#end-date').fill('2026-04-03');
-  await page.getByRole('button', { name: 'Run DST audit' }).click();
+  await page.getByRole('button', { name: 'Run audit' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Expected fixture is internally consistent' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Expected availability is internally consistent' })).toBeVisible();
   await expect(page.getByText('2026-03-29: UTC+00:00 → UTC+01:00')).toBeVisible();
   const boundaryRow = page.locator('tbody tr').filter({ hasText: '2026-03-30' });
   await expect(boundaryRow).toContainText('09:00–17:00');
@@ -44,8 +44,8 @@ test('replaces stale audit output with an accessible rerun state', async ({ page
   await page.locator('#comparison-zone').fill('America/New_York');
   await page.locator('#start-date').fill('2026-03-23');
   await page.locator('#end-date').fill('2026-04-03');
-  await page.getByRole('button', { name: 'Run DST audit' }).click();
-  await expect(page.getByRole('heading', { name: 'Expected fixture is internally consistent' })).toBeVisible();
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  await expect(page.getByRole('heading', { name: 'Expected availability is internally consistent' })).toBeVisible();
 
   await page.locator('#comparison-zone').fill('Europe/Berlin');
 
@@ -68,4 +68,12 @@ test('legal pages expose semantic essentials', async ({ page }) => {
     const accessibility = await new AxeBuilder({ page }).analyze();
     expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);
   }
+});
+
+test('product-owned 404 provides a semantic way back', async ({ page }) => {
+  await page.goto('/404.html');
+  await expect(page).toHaveTitle('Page not found — Availability DST Audit');
+  await expect(page.locator('main')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'That page was not found' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open the sample audit' })).toHaveAttribute('href', '/?demo=1');
 });

@@ -1,54 +1,52 @@
 # Availability DST Audit
 
-A free, local-first preflight for booking availability across daylight-saving changes. It turns declared weekly working hours into a dated expected-slot matrix, highlights civil-time boundary cases, and exports CSV/ICS fixtures for comparison with Calendly, Cal.com, Google Calendar, or another scheduler.
+Check booking hours across daylight-saving changes before you publish availability.
 
-Live product: <https://availability-dst-audit.sociobot.in>
+For consultants, recruiters, and coordinators who publish booking hours in more than one timezone.
 
-## Who it is for
+Try the completed sample: <https://availability-dst-audit.sociobot.in/?demo=1>
 
-Consultants, recruiters, and distributed-team coordinators who need evidence that published booking slots continue to respect an organizer’s local working hours when timezone offsets change.
+## What it does
 
-## What it checks
+- Creates dated expected booking times from weekly hours.
+- Shows the first working window after a clock change.
+- Marks missing or repeated local times.
+- Exports the same results as CSV or UTC ICS.
 
-- Organizer offset changes within the chosen date range
-- The first scheduled window after each DST boundary
-- Missing wall times during a spring-forward jump
-- Ambiguous wall times during a fall-back repeat
-- Elapsed-duration drift across an offset change
-- Comparison-zone projections that land on a different date
-- CSV and ICS expected-slot fixtures derived from the same matrix
+The browser uses its IANA timezone rules. The tool does not model scheduler buffers, holidays, overrides, or account settings.
 
-The audit uses the IANA timezone data shipped by the browser and operating system. It does not reproduce vendor buffers, overrides, notice periods, holidays, or proprietary availability logic. A mismatch is evidence to investigate, not a guarantee of a vendor defect.
+## Run and verify
 
-## Develop and verify
-
-Requirements: Node.js 20 or newer and npm.
+Use Node.js 20 or later.
 
 ```sh
 npm ci
 npm run dev
 npm test
 npm run build
+npm run test:e2e
 ```
 
-`npm run build` is the deployment command. It creates the static site at `dist/`, with `dist/index.html` at the root. To inspect that exact output:
+Run every published claim check from the sample sandbox:
 
 ```sh
-npm run preview
+node -e "for (const c of require('./.factory/claims.json')) console.log(c.test)"
+# Run each printed command.
 ```
 
-## Architecture and privacy
+`npm run build` writes the deployable static site to `dist/`.
 
-The app is Vite + vanilla TypeScript with no runtime dependencies. Civil-time resolution is implemented with `Intl.DateTimeFormat`; candidate instants are round-tripped through the chosen IANA zone to detect zero, one, or two mappings. All computation and export generation happen in-browser.
+## Privacy and demo
 
-The last successful form configuration is stored in local storage. No schedule, export, analytics event, or tracking identifier is sent to a server. The service worker caches the application shell for repeat offline use.
+The audit and exports run in the browser. The sample demo uses separate local storage and is discarded when you start for real. See [the demo notes](.factory/demo.md), [Privacy](https://availability-dst-audit.sociobot.in/privacy/), and [Terms](https://availability-dst-audit.sociobot.in/terms/).
 
-## Product documentation
+## Deploy
+
+This is a Vite and TypeScript static site for Azure Static Web Apps. Deploy `dist/`; the factory manages infrastructure and DNS.
+
+## Project records
 
 - [Visual system and asset provenance](.factory/design.md)
-- [Build handoff](.factory/handoff.md)
+- [Claim registry](.factory/claims.json)
+- [Handoff](.factory/handoff.md)
 - [MIT License](LICENSE)
-
-## Deployment
-
-This is a static Azure Static Web Apps artifact. Deploy the contents of `dist/`; infrastructure, DNS, and billing are managed outside this repository.

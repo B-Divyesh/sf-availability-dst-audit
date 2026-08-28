@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   timeout: 30_000,
+  workers: 1,
   retries: 0,
   reporter: 'line',
   use: {
@@ -16,6 +17,6 @@ export default defineConfig({
   webServer: {
     command: 'npm run preview',
     port: 4173,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
 });

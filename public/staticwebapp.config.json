@@ -19,6 +19,11 @@
       }
     }
   ],
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404.html"
+    }
+  },
   "mimeTypes": {
     ".webmanifest": "application/manifest+json"
   }

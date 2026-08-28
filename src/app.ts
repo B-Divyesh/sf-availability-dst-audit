@@ -4,7 +4,9 @@ import { downloadText, resultToCsv, resultToIcs } from './export';
 import type { AuditConfig, AuditResult, DaySchedule } from './types';
 
 const STORAGE_KEY = 'availability-dst-audit:config:v1';
+const DEMO_STORAGE_KEY = 'demo:availability-dst-audit:config:v1';
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const demoMode = new URLSearchParams(location.search).get('demo') === '1' || location.pathname === '/demo/' || location.pathname === '/demo';
 
 const form = document.querySelector<HTMLFormElement>('#audit-form')!;
 const results = document.querySelector<HTMLElement>('#results')!;
@@ -14,6 +16,9 @@ const zoneList = document.querySelector<HTMLDataListElement>('#timezone-options'
 const exportCsv = document.querySelector<HTMLButtonElement>('#export-csv')!;
 const exportIcs = document.querySelector<HTMLButtonElement>('#export-ics')!;
 const configSaved = document.querySelector<HTMLElement>('#saved-state')!;
+const demoBanner = document.querySelector<HTMLElement>('#demo-banner')!;
+const resetDemo = document.querySelector<HTMLButtonElement>('#reset-demo')!;
+const startReal = document.querySelector<HTMLAnchorElement>('#start-real')!;
 
 let currentResult: AuditResult | null = null;
 let currentConfig: AuditConfig | null = null;
@@ -41,9 +46,24 @@ function defaults(): AuditConfig {
   };
 }
 
+function demoConfig(): AuditConfig {
+  return {
+    organizerZone: 'Europe/London',
+    comparisonZone: 'America/New_York',
+    startDate: '2026-03-23',
+    endDate: '2026-04-03',
+    schedule: dayNames.map((_, weekday) => ({
+      weekday,
+      enabled: weekday > 0 && weekday < 6,
+      start: '09:00',
+      end: '17:00',
+    })),
+  };
+}
+
 function loadConfig(): AuditConfig {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(demoMode ? DEMO_STORAGE_KEY : STORAGE_KEY);
     if (saved) return JSON.parse(saved) as AuditConfig;
   } catch {
     configSaved.textContent = 'Local preferences are unavailable in this browser.';
@@ -139,7 +159,7 @@ function renderEmpty(message: string) {
   results.innerHTML = `
     <div class="empty-state">
       <div class="empty-pixel" aria-hidden="true">⌁</div>
-      <h2>No fixture yet</h2>
+      <h2>No audit results yet</h2>
       <p>${message}</p>
       <a href="#setup" class="text-link">Review configuration ↑</a>
     </div>`;
@@ -181,7 +201,7 @@ function renderResults(config: AuditConfig, result: AuditResult) {
     <div class="verdict verdict--${verdictClass}">
       <div>
         <span class="eyebrow">Audit verdict</span>
-        <h2>${issues ? `${issues} window${issues === 1 ? '' : 's'} need review` : 'Expected fixture is internally consistent'}</h2>
+        <h2>${issues ? `${issues} window${issues === 1 ? '' : 's'} need review` : 'Expected availability is internally consistent'}</h2>
         <p>${result.rows.length} expected windows · ${result.boundaryCount} boundary cases · ${(result.totalMinutes / 60).toLocaleString()} hours</p>
       </div>
       <span class="verdict-mark" aria-hidden="true">${issues ? '!' : '✓'}</span>
@@ -195,10 +215,10 @@ function renderResults(config: AuditConfig, result: AuditResult) {
     </div>
     <div class="table-heading">
       <div>
-        <span class="eyebrow">Expected-slot matrix</span>
-        <h3>Declared hours, projected without guesswork</h3>
+        <span class="eyebrow">Expected availability times</span>
+        <h3>Declared hours in each timezone</h3>
       </div>
-      <p>Boundary rows are the first scheduled windows within six days after a clock change.</p>
+      <p>Boundary rows are the first working windows after a clock change.</p>
     </div>
     <div class="table-wrap" tabindex="0" aria-label="Scrollable expected-slot matrix">
       <table>
@@ -218,15 +238,20 @@ function renderResults(config: AuditConfig, result: AuditResult) {
   results.removeAttribute('data-stale');
 }
 
-function formatOffsetUi(minutes: number) {
-  const sign = minutes >= 0 ? '+' : '−';
-  const abs = Math.abs(minutes);
-  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+function saveConfig(config: AuditConfig) {
+  try {
+    localStorage.setItem(demoMode ? DEMO_STORAGE_KEY : STORAGE_KEY, JSON.stringify(config));
+    configSaved.textContent = demoMode
+      ? 'Sample changes stay in demo storage and are discarded when you start for real.'
+      : 'Configuration saved only in this browser.';
+  } catch {
+    configSaved.textContent = demoMode
+      ? 'Sample audit complete. Demo storage is unavailable in this browser.'
+      : 'Audit complete. Local preferences could not be saved.';
+  }
 }
 
-form.addEventListener('input', markStale);
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
+function runCurrentAudit({ scroll = true }: { scroll?: boolean } = {}) {
   const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
   const config = getConfig();
   const errors = validateConfig(config);
@@ -237,28 +262,35 @@ form.addEventListener('submit', (event) => {
     return;
   }
   button.disabled = true;
-  button.textContent = 'Computing fixture…';
-  requestAnimationFrame(() => {
-    try {
-      currentResult = runAudit(config);
-      currentConfig = config;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-        configSaved.textContent = 'Configuration saved only in this browser.';
-      } catch {
-        configSaved.textContent = 'Audit complete. Local preferences could not be saved.';
-      }
-      renderResults(config, currentResult);
-      statusRegion.textContent = `Audit complete: ${currentResult.rows.length} expected windows computed.`;
+  button.textContent = 'Running audit…';
+  try {
+    currentResult = runAudit(config);
+    currentConfig = config;
+    saveConfig(config);
+    renderResults(config, currentResult);
+    statusRegion.textContent = `Audit complete: ${currentResult.rows.length} expected windows computed.`;
+    if (scroll) {
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       results.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    } catch (error) {
-      statusRegion.textContent = error instanceof Error ? error.message : 'The audit could not be computed. Check the inputs and try again.';
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Run DST audit';
     }
-  });
+  } catch (error) {
+    statusRegion.textContent = error instanceof Error ? error.message : 'The audit could not be computed. Check the inputs and try again.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Run audit';
+  }
+}
+
+function formatOffsetUi(minutes: number) {
+  const sign = minutes >= 0 ? '+' : '−';
+  const abs = Math.abs(minutes);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
+form.addEventListener('input', markStale);
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  requestAnimationFrame(() => runCurrentAudit());
 });
 
 exportCsv.addEventListener('click', () => {
@@ -279,8 +311,26 @@ window.addEventListener('online', updateNetworkState);
 window.addEventListener('offline', updateNetworkState);
 updateNetworkState();
 populateZones();
-setForm(loadConfig());
-renderEmpty('Define the local promise, choose a boundary window, then run the audit.');
+if (demoMode) {
+  document.title = 'Demo — Availability DST Audit';
+  demoBanner.hidden = false;
+  setForm(demoConfig());
+  configSaved.textContent = 'Demo mode uses separate sample storage.';
+  renderEmpty('Loading the completed London–New York sample audit.');
+  requestAnimationFrame(() => runCurrentAudit({ scroll: false }));
+  resetDemo.addEventListener('click', () => {
+    localStorage.removeItem(DEMO_STORAGE_KEY);
+    setForm(demoConfig());
+    currentResult = null;
+    currentConfig = null;
+    runCurrentAudit({ scroll: false });
+    statusRegion.textContent = 'Demo reset to the original London–New York sample.';
+  });
+  startReal.addEventListener('click', () => localStorage.removeItem(DEMO_STORAGE_KEY));
+} else {
+  setForm(loadConfig());
+  renderEmpty('Set the working hours and dates, then run an audit.');
+}
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
