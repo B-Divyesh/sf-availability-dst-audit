@@ -46,7 +46,9 @@ All checks below were run against the repaired production build served locally b
 - Privacy/network checks: runtime request capture contained only `http://127.0.0.1:4173`; static inspection found localStorage-only preferences, Blob downloads, no analytics/tracking, no CDN fonts/scripts, and self-only CSP `connect-src`.
 - Responsive/browser checks: at 390×844, `scrollWidth == clientWidth == 390`; all browser checks had zero console/page errors.
 - Lighthouse mobile (simulated throttling): **Performance 100, Accessibility 100, Best Practices 100, SEO 100**; LCP **1.7 s**, CLS **0**, Total Blocking Time **40 ms**, Speed Index **0.9 s**.
-- Deployment preflight: `swa deploy ./dist --env production --dry-run` found `public/staticwebapp.config.json` and the `dist/` output. The CLI requires the factory deployment token; deployment is therefore performed through the configured repository release path after the repair commit is pushed.
+- Production deployment: Azure Static Web Apps deployed `dist/` to `https://witty-beach-05061050f.7.azurestaticapps.net` using the configured `sf-availability-dst-audit` production app and `public/staticwebapp.config.json`.
+- Live identity: the Azure hostname and `https://availability-dst-audit.sociobot.in/` both returned SHA-256 `8be4dae40827b91319f41bff3a2e45ed9e302ccc9178ab968c27853c1aaafb0c`, exactly matching `dist/index.html`. The custom domain responded HTTP 200 with HSTS, self-only CSP, `nosniff`, strict referrer policy, and camera/microphone/geolocation denial.
+- Live smoke: `verify-url.sh` against the custom domain found title/lang/one-h1/main/alt/button-label requirements satisfied and zero console/page errors. The live London/New York → Berlin stale-state run had zero serious/critical axe violations, no retained matrix, disabled exports, and same-origin-only runtime requests.
 
 ## Known limits
 
