@@ -1,4 +1,32 @@
-# Availability DST Audit — repair handoff
+# Availability DST Audit — review handoff
+
+Work order: `availability-dst-audit-review-1`
+Completed: 28 August 2026
+
+## Result
+
+Independent adversarial review is **FAIL**. No product code was changed. The full report is `.factory/review-1.md`.
+
+The deployed product's manual DST audit works, but it does not meet this review's product contract: its first screen is not plain about the job/audience/first click, `/demo` is a 404 and no isolated sample-data mode exists, `.factory/claims.json` and claim-tagged tests are absent, and the deployed 404 is Azure's generic page. The report also records unlisted landing/README claims, copy counts/rewrites, and missing route metadata/navigation requirements.
+
+## Verification performed
+
+```sh
+npm ci
+npm test
+npm run build
+npm run test:e2e
+```
+
+All commands passed locally: 7 Vitest tests, production build to `dist/`, and 6 Playwright smoke tests. Fresh deployed-browser checks ran at 390 x 844 and 1440 x 900. The manual London/New York fixture rendered and export controls enabled; request capture contained only the product origin and no console/page errors. These checks do not substitute for the missing demo and per-claim tests.
+
+## Required next steps
+
+Implement every finding in `.factory/review-1.md`, beginning with F-1-1 through F-1-5 and F-1-7. Add and test `/demo` before claiming privacy, offline, export, or DST-detection behaviour. Re-run an adversarial review from a clean clone and deployed browser after repair.
+
+---
+
+# Previous repair handoff
 
 Work order: `availability-dst-audit-repair-1`
 
