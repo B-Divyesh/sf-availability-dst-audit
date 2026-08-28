@@ -1,7 +1,7 @@
 # Polish 1 — review finding closure
 
 Base reviewed: `1e8d147707c49e8df572194101db06ff47b1e395`
-Repair commit: recorded after this document is committed.
+Repair commits: `d47f8d44aa823779fde01234b36910e5c692e7be`, `2e2e6cdfe9395a919a2912dfcf55315b603659f7`.
 
 | Finding | Change made | Evidence |
 | --- | --- | --- |
@@ -26,4 +26,8 @@ The earlier stale-result contrast finding remains fixed. Changing a completed co
 
 ## Deployment re-check
 
-The deployed URL, response status, screenshots, and route checks are appended to `.factory/handoff.md` after deployment.
+- Deployed production artifact: `https://availability-dst-audit.sociobot.in` and `https://witty-beach-05061050f.7.azurestaticapps.net`.
+- Cold live demo check: `/?demo=1` returned HTTP 200 with title `Demo — Availability DST Audit`, banner, 10 rows, reset/start controls, one h1/main, and no 390px document overflow.
+- Cold live legal checks: `/privacy/` and `/terms/` each returned HTTP 200 with their own correct title, one h1, and main landmark.
+- Live missing route check: `/not-a-real-page` returned HTTP 404 with the product-owned title, “That page was not found” h1, main landmark, and sample-audit link.
+- Live root HTML SHA-256 matched `dist/index.html`: `726d7b3d2c38bb4343f7939a1c1ac3d70d617438e2cf592d5bc8f7d34beac1a5`.

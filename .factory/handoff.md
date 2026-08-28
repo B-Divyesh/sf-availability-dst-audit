@@ -2,7 +2,7 @@
 
 Work order: `availability-dst-audit-polish-1`
 Base: `1e8d147707c49e8df572194101db06ff47b1e395`
-Repair commit: appended after commit and deployment.
+Repair commits: `d47f8d44aa823779fde01234b36910e5c692e7be`, `2e2e6cdfe9395a919a2912dfcf55315b603659f7`.
 
 ## Delivered
 
@@ -39,7 +39,13 @@ Run each exact command listed in `.factory/claims.json` to verify every visitor-
 
 ## Deployment
 
-The final Azure Static Web Apps deployment and cold live checks are recorded after the repair commit is pushed.
+Deployed `dist/` through the configured Azure Static Web Apps work order to <https://witty-beach-05061050f.7.azurestaticapps.net> and <https://availability-dst-audit.sociobot.in>.
+
+- The custom domain returned HTTP 200 for the demo and each legal route.
+- A cold live `/?demo=1` browser check found title `Demo — Availability DST Audit`, its visible demo banner, 10 completed rows, working Reset demo and Start for real controls, one h1/main landmark, 390px no-overflow layout, and no console errors.
+- Live Privacy and Terms each had their distinct correct title, one h1, and main landmark. This specifically verifies the service worker now uses network-first navigation rather than returning the cached home document for legal routes.
+- `/not-a-real-page` returned the designed 404 with status 404, product title, one h1, main landmark, and a sample-audit link.
+- `dist/index.html` and live `/` matched SHA-256: `726d7b3d2c38bb4343f7939a1c1ac3d70d617438e2cf592d5bc8f7d34beac1a5`.
 
 ## Known scope
 
