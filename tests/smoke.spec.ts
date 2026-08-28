@@ -38,6 +38,27 @@ test('runs a 2026 DST audit, persists config, and exports fixtures', async ({ pa
   }
 });
 
+test('replaces stale audit output with an accessible rerun state', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#organizer-zone').fill('Europe/London');
+  await page.locator('#comparison-zone').fill('America/New_York');
+  await page.locator('#start-date').fill('2026-03-23');
+  await page.locator('#end-date').fill('2026-04-03');
+  await page.getByRole('button', { name: 'Run DST audit' }).click();
+  await expect(page.getByRole('heading', { name: 'Expected fixture is internally consistent' })).toBeVisible();
+
+  await page.locator('#comparison-zone').fill('Europe/Berlin');
+
+  await expect(page.getByText('Configuration changed. Run the audit again before exporting.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Fixture needs a fresh run' })).toBeVisible();
+  await expect(page.locator('#results table')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Export ICS' })).toBeDisabled();
+
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);
+});
+
 test('legal pages expose semantic essentials', async ({ page }) => {
   for (const path of ['/privacy/', '/terms/']) {
     await page.goto(path);

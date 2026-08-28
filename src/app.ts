@@ -121,7 +121,15 @@ function getConfig(): AuditConfig {
 function markStale() {
   if (!currentResult) return;
   results.dataset.stale = 'true';
-  document.querySelector<HTMLElement>('#results-stale')!.hidden = false;
+  results.innerHTML = `
+    <section class="stale-state" aria-labelledby="stale-title">
+      <span class="stale-glyph" aria-hidden="true">↻</span>
+      <div>
+        <p id="results-stale" class="stale-note" role="status">Configuration changed. Run the audit again before exporting.</p>
+        <h2 id="stale-title">Fixture needs a fresh run</h2>
+        <p>The previous matrix is hidden because it no longer matches the declared hours, zones, or dates. Run the audit to generate an updated fixture.</p>
+      </div>
+    </section>`;
   exportCsv.disabled = true;
   exportIcs.disabled = true;
 }

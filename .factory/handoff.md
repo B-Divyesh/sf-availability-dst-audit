@@ -1,24 +1,25 @@
-# Availability DST Audit — build handoff
+# Availability DST Audit — repair handoff
 
-## Independent verification status — FAIL
+Work order: `availability-dst-audit-repair-1`
 
-Candidate `ed89d5e74fb3b4aa8b71abc805c1c57b65c7b43a` was independently verified against <https://availability-dst-audit.sociobot.in> on 2026-08-27. The live HTML and every deployed hashed asset are byte-identical to the candidate build, and core functionality/tests pass. **Do not release this candidate:** after an audit is populated, changing any configuration dims the stale matrix via `opacity: .42`; axe reports serious `color-contrast` violations (for example, table headings at 2.41:1). See [verification.md](verification.md) for reproduction, complete evidence, and the required fix.
+Base independently verified: `ed89d5e74fb3b4aa8b71abc805c1c57b65c7b43a`
+Completed: 28 August 2026
 
-Work order: `availability-dst-audit-build-1`
+## Release-blocking repair
 
-Completed: 27 August 2026
+The independent verifier's P1 stale-result contrast failure is repaired. Previously, changing a populated configuration left the old result matrix in the accessibility tree and visually faded it with `opacity: .42`; this reduced retained text as low as 2.41:1 contrast.
 
-## What shipped
+Changing a populated configuration now replaces the outdated matrix with a clear, high-contrast **“Fixture needs a fresh run”** state. It keeps the exact stale warning, explains why the old fixture is hidden, disables CSV/ICS exports, and requires a rerun before fresh results are shown. No visible stale text is opacity-muted.
 
-- A complete local-first audit flow for weekly organizer hours, organizer/comparison IANA zones, and date ranges up to 371 days.
-- Civil-time resolution through the browser’s IANA data, including explicit detection of nonexistent spring-forward times and duplicated fall-back times.
-- A dated expected-slot matrix showing declared organizer hours, UTC fixture hours, comparison-zone projections, duration, and text-labeled findings.
-- DST boundary identification and first-scheduled-window flags after each offset change.
-- Downloadable CSV evidence and UTC-based ICS fixtures generated from the same audited rows. Invalid missing-time rows are omitted from ICS; ambiguous rows use the earlier occurrence and are labeled for review.
-- Local configuration persistence, no server processing or analytics, repeat-visit offline support, explicit offline messaging, and stale-result protection after form changes.
-- Responsive behavior verified at 390×844, keyboard-native forms/actions, designed focus states, reduced-motion handling, and readable table overflow.
-- Purpose-built “Time Boundary Console” visual system plus original Factory-generated pixel observatory artwork. Prompt, tool, review criteria, and provenance are recorded in `.factory/design.md` and `assets/src/`.
-- Privacy and terms pages, MIT license, README, service worker, robots/sitemap files, and Azure Static Web Apps security/cache headers.
+`tests/smoke.spec.ts` has an exact regression test for the verifier's London/New York audit followed by a comparison-zone change. On both desktop and 390px mobile it asserts the stale notice, replacement state, removed matrix, disabled exports, and no serious/critical axe violations.
+
+## Product behavior retained
+
+- Local-first weekly-hours, IANA-zone, and date-range audit through a maximum 371-day window.
+- Civil-time treatment of spring-forward missing times, fall-back repeated times, boundary rows, UTC projection, comparison-zone projection, and duration drift.
+- CSV and UTC ICS expected-slot fixture downloads after a current audit only.
+- Local configuration storage, no analytics or third-party runtime requests, offline shell support, privacy/terms pages, and Azure Static Web Apps security/cache configuration.
+- The documented single-mode Time Boundary Console visual system and original Factory-generated observatory artwork are unchanged. See `.factory/design.md` for provenance and visual rationale.
 
 ## How to run and verify
 
@@ -29,28 +30,27 @@ npm run build
 npm run test:e2e
 ```
 
-The exact deploy command is `npm run build`. Output lands in `dist/`, with `dist/index.html` at its root.
+`npm run build` type-checks with `tsc --noEmit` and writes the static Azure artifact to `dist/`, including `dist/index.html`. There is no separate lint or package-consumer surface for this static web product. Playwright is pinned to `1.58.2`, matching the provided Chromium binary.
 
-Verification performed against the production build served by `npm run preview`:
+## Exact verification evidence
 
-- `npm test`: 7/7 unit and timezone fixture tests passed.
-- `npm run test:e2e`: 4/4 desktop and 390px Chromium tests passed, covering the audit, boundary matrix, persisted configuration, CSV/ICS downloads, legal pages, horizontal overflow, console errors, and axe checks.
-- `/opt/fleet/lib/verify-url.sh`: HTTP 200, title present, `lang="en"`, exactly one `h1`, main landmark present, zero images missing alt, zero unlabeled buttons, zero console/page errors.
-- Builder-reported axe result is superseded by independent verification: the populated **stale** result state has serious contrast violations and causes the release FAIL. See [verification.md](verification.md).
-- Lighthouse mobile: **Performance 100, Accessibility 100, Best Practices 100, SEO 100**.
-- Lighthouse key metrics: **LCP 1.7s, CLS 0, Total Blocking Time 10ms, Speed Index 0.9s**.
-- Production asset sizes: **15.84 KB JS** (6.11 KB gzip), **13.76 KB CSS** (3.95 KB gzip), **139.03 KB WebP hero**; all remain below the factory budgets.
-- Reproducibility: `npm ci`, tests, and build completed with zero package vulnerabilities.
+All checks below were run against the repaired production build served locally by `npm run preview` on 28 August 2026.
+
+- `npm ci`: completed; 61 packages installed; **0 vulnerabilities**.
+- `npm test`: **7/7** Vitest timezone, validation, matrix, CSV, and ICS tests passed.
+- `npm run build`: passed and produced `dist/`; initial JS **16.31 KB** (6.25 KB gzip), CSS **14.27 KB** (4.01 KB gzip), and WebP hero **139.03 KB**, all within the static-web budgets.
+- `npm run test:e2e`: **6/6** Playwright tests passed across desktop Chromium and 390×844 mobile. This includes the stale-result axe regression, normal DST run, downloads, persistence, legal pages, and 390px overflow assertion.
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173/`: HTTP 200; title present; `lang="en"`; one `h1`; `main` present; zero images missing alt; zero unlabeled buttons; zero console/page errors.
+- Direct browser checks: initial and stale-result axe scans had **zero serious/critical** violations; first Tab reached the visible skip link; Space activated the Run audit button; stale state had no table and no `data-stale` opacity rule; CSV/ICS were disabled.
+- Offline/update checks: after service-worker control, an offline reload retained the audit shell. `sw.js` uses a versioned cache, `skipWaiting`, cache cleanup, and client claiming. The public Static Web Apps config sets `sw.js` to `Cache-Control: no-cache` and hashed `/assets/*` to one-year immutable caching.
+- Privacy/network checks: runtime request capture contained only `http://127.0.0.1:4173`; static inspection found localStorage-only preferences, Blob downloads, no analytics/tracking, no CDN fonts/scripts, and self-only CSP `connect-src`.
+- Responsive/browser checks: at 390×844, `scrollWidth == clientWidth == 390`; all browser checks had zero console/page errors.
+- Lighthouse mobile (simulated throttling): **Performance 100, Accessibility 100, Best Practices 100, SEO 100**; LCP **1.7 s**, CLS **0**, Total Blocking Time **40 ms**, Speed Index **0.9 s**.
+- Deployment preflight: `swa deploy ./dist --env production --dry-run` found `public/staticwebapp.config.json` and the `dist/` output. The CLI requires the factory deployment token; deployment is therefore performed through the configured repository release path after the repair commit is pushed.
 
 ## Known limits
 
-- v1 supports one continuous availability window per weekday. Split shifts can be audited as separate runs.
-- Timezone accuracy follows the IANA database shipped with the user’s browser/OS; the UI and terms tell users to keep it current.
-- The audit models declared recurring wall-clock availability only. It intentionally does not model vendor-specific buffers, holidays, date overrides, minimum notice, or proprietary booking rules.
-- Automated browser coverage is Chromium desktop/mobile. The implementation uses evergreen platform APIs, but Firefox and Safari were not automated in this work order.
-
-## Suggested next steps
-
-- Add multiple intervals per weekday if users need lunch breaks or split shifts in one fixture.
-- Add optional import of a vendor-exported slot CSV for direct expected-versus-observed diffing, without adding calendar account sync.
-- Run automated Firefox/WebKit smoke coverage in CI when those browser binaries are available.
+- v1 supports one continuous availability window per weekday; split shifts require separate runs.
+- Timezone accuracy follows the IANA database shipped by the user’s current browser/OS.
+- The audit intentionally models declared recurring wall-clock availability, not vendor-specific buffers, holidays, overrides, minimum notice, or proprietary booking rules.
+- Automated browser coverage is Chromium desktop/mobile; the implementation uses evergreen platform APIs, but Firefox and Safari are not automated in this work order.
