@@ -3,6 +3,8 @@
 Work order: `availability-dst-audit-repair-1`
 
 Base independently verified: `ed89d5e74fb3b4aa8b71abc805c1c57b65c7b43a`
+
+Repair implementation: `9703ba64db4dd98174f71934d2027f6c95550c4d`
 Completed: 28 August 2026
 
 ## Release-blocking repair
