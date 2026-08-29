@@ -1,28 +1,38 @@
-# Availability DST Audit — review 2 handoff
+# Availability DST Audit — polish 2 handoff
 
-Work order: `availability-dst-audit-review-2`
-
-Reviewed revision: `47144ec7feaa956cf8e48e888d7408abb6050b4e`
-
-Verdict: **FAIL**
+Work order: availability-dst-audit-polish-2
+Base: 56c8d3c8de8819e18ebd342b846b6c94013e9f50
+Repair commits: 5edeec3 and de59043
+Deployed revision: de59043
 
 ## Delivered
 
-- Added `.factory/review-2.md` with the cold mobile/desktop read, complete landing/README copy audit, demo and storage checks, claims cross-check, history verification, route/accessibility review, missed-leverage review, and ordered findings.
-- Did not modify product code.
+- Corrected DST transition detection so only the first enabled post-change window is boundary-marked.
+- Made the sample demo a complete canonical /demo/ route and put the completed audit, boundary summary, sample rows, reset, and real-mode exit in its first screen.
+- Added local UTC CSV/ICS published-availability import with missing, extra, shifted, and duration comparison.
+- Added complete claim coverage, a real demo metadata document, route focus/announcement behavior, revised plain language, and updated demo, README, catalog, and copy records.
+- Preserved the dark pixel-console visual system and original observatory artwork.
 
-## Verification
+## Run and verify
 
-From a fresh clone after `npm ci` and `npm run build`:
+Use Node.js 20 or later:
 
-- `npm test`: 7/7 passed.
-- Every exact `.factory/claims.json` command: passed on desktop and mobile.
-- `npm run test:claims`: 16/16 passed.
-- `npm run test:e2e`: 24/24 passed.
-- Live Axe checks: zero serious/critical violations on root, demo, Privacy, Terms, and 404 at 390 px and 1440 px.
-- Live demo request log: same-origin only; offline reload, Reset demo, Start for real, CSV download, and real/demo storage isolation verified.
-- Link crawl: no dead product links; the designed missing route correctly returned 404.
+    npm ci
+    npm test
+    npm run build
+    npm run test:e2e
 
-## Remaining work
+Run each exact command in .factory/claims.json. The static deployment output is dist/.
 
-The blocking issues are documented in `.factory/review-2.md`: the demo result is below the first screen, five rows are mislabeled as the first boundary window, related landing/README claims are unlisted, the terminology repair remains incomplete, and `/demo/` is an incomplete metadata/skeleton route. Route-change focus and actual-schedule import are also outstanding.
+## Evidence
+
+- Final clean clone at de59043: npm test passed 8/8; npm run build passed; every one of 11 claim commands passed on desktop and 390px; npm run test:e2e passed 34/34.
+- Local verify-url.sh passed for root and demo. Both had a title, lang=en, exactly one h1, main, alt-complete images, and no console errors.
+- Browser Axe integration found zero serious/critical violations. The standalone Axe CLI could not launch Selenium Chrome in this container, so the executed Playwright Axe scan is the accessibility evidence.
+- Deployment f4d8bb9f-408f-4587-9661-2daace520b8d succeeded through /opt/fleet/lib/deploy-static.sh.
+- Cold live checks: root, demo, Privacy, and Terms returned 200. The live demo had title Demo — Availability DST Audit, banner, 10 rows, one boundary row on 30 March, no boundary on 31 March, and 1 missing/extra/shifted/duration comparison result. Privacy focused its h1 on route load. The designed missing route returned 404 with the product title, h1, main, and demo link.
+- Screenshots and machine-readable checks: .factory/evidence/polish-2/live/.
+
+## Known gaps
+
+None. The standalone Axe CLI limitation is environmental only; equivalent Playwright Axe scans passed.
