@@ -1,5 +1,6 @@
-const CACHE = 'availability-dst-audit-v8';
-const SHELL = ['/', '/?demo=1', '/demo/', '/privacy/', '/terms/', '/404.html', '/offline.html', '/favicon.svg', '/apple-touch-icon.png', '/time-boundary-preview.png', '/sample-published-availability.csv', '/assets/app.js', '/assets/route-focus.js', '/assets/route-focus.css', '/assets/time-boundary-observatory.webp', '/assets/time-boundary-observatory.png'];
+const CACHE = 'availability-dst-audit-v9';
+const BUILD_ASSETS = __BUILD_ASSETS__;
+const SHELL = ['/', '/?demo=1', '/demo/', '/privacy/', '/terms/', '/404.html', '/offline.html', '/favicon.svg', '/apple-touch-icon.png', '/time-boundary-preview.png', '/sample-published-availability.csv', ...BUILD_ASSETS];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });

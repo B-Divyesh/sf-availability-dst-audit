@@ -132,3 +132,15 @@ test('visible phone controls have effective targets of at least 44 by 44 pixels'
     expect(failures, `${path} undersized controls`).toEqual([]);
   }
 });
+
+test('production assets are fingerprinted and included in the offline cache', async ({ page, request }) => {
+  await page.goto('/');
+  const appSource = await page.locator('script[src*="/assets/app-"]').getAttribute('src');
+  const styleSource = await page.locator('link[rel="stylesheet"][href*="/assets/route-focus-"]').getAttribute('href');
+  expect(appSource).toMatch(/^\/assets\/app-[\w-]+\.js$/);
+  expect(styleSource).toMatch(/^\/assets\/route-focus-[\w-]+\.css$/);
+  const serviceWorker = await (await request.get('/sw.js')).text();
+  expect(serviceWorker).toContain(appSource!);
+  expect(serviceWorker).toContain(styleSource!);
+  expect(serviceWorker).not.toContain('__BUILD_ASSETS__');
+});
