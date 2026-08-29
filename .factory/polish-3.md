@@ -1,9 +1,13 @@
 # Polish 3 — cumulative finding closure
 
-Base review commit: `e1b939c646d7c7e9925be25104e1de473a6f3388`  
-Reviewed candidate: `596393ae61ad99b472c61f2aece8fa648224407c`  
-Repair commits: `e2db8be6208b7193ea75fc853d07d0434c3e2744`, `e077349`  
-Deployment: `16d56dfd-8b30-4640-bb9a-e1d412207cce`  
+Base review commit: `e1b939c646d7c7e9925be25104e1de473a6f3388`
+
+Reviewed candidate: `596393ae61ad99b472c61f2aece8fa648224407c`
+
+Repair commits: `e2db8be6208b7193ea75fc853d07d0434c3e2744`, `e077349`, `55c0c9b`
+
+Deployment: `459aec1e-f0f3-4ab7-8b37-da43ba662e95`
+
 Live URL: <https://availability-dst-audit.sociobot.in/>
 
 Every review-1, review-2, and review-3 finding was rechecked. Earlier repairs remain present; round-three changes close the seven remaining findings.
@@ -13,7 +17,7 @@ Every review-1, review-2, and review-3 finding was rechecked. Earlier repairs re
 | Finding | Change made | Evidence |
 | --- | --- | --- |
 | F-1-1 | Kept the job-first headline, named audience, sample action, adjacent outcome, and three facts on the first screen. | `@claim:sample-audit`; `.factory/evidence/polish-3/live/root/screenshot-mobile.png`; live root CTA top 468 px at 390 × 844. |
-| F-1-2 | Kept direct `?demo=1` and canonical `/demo/`, separate `demo:` storage, persistent banner, Reset demo, Start for real, and immediate completed results. | `@claim:demo-isolation`, `@claim:sample-audit`; `.factory/evidence/polish-3/live/demo/screenshot-mobile.png`; live `/?demo=1`. |
+| F-1-2 | Kept direct `?demo=1` and canonical `/demo/`, separate `demo:` storage, persistent banner, Reset demo, Start for real, and immediate completed results. | `@claim:demo-isolation`, `@claim:sample-audit`; `.factory/evidence/polish-3/live/demo/screenshot-mobile.png`; live `/?demo=1` has 12 rows. |
 | F-1-3 | Expanded `.factory/claims.json` to 12 claims, each with exactly one tagged browser test. | Every exact registry command passed 2/2 from a clean clone. |
 | F-1-4 | Kept tests for sample rows, timezone rules, boundary selection, edge cases, exports, comparison dates, privacy, and browser-only work. | `tests/claims.spec.ts`; full clean-clone claim run; live demo request origins contained only the product origin. |
 | F-1-5 | Kept README claims aligned with the registry and added tested split-day and strict-UTC behavior. | README; all 12 `@claim:*` tests. |
@@ -29,7 +33,7 @@ Every review-1, review-2, and review-3 finding was rechecked. Earlier repairs re
 | F-2-2 | Kept the exact first-enabled-window boundary algorithm and negative checks for every later row. | `@claim:first-boundary-window`; live demo has one boundary row. |
 | F-2-3 | Kept the README boundary wording identical to the tested rule. | README; `@claim:first-boundary-window`. |
 | F-2-4 | Kept one plain vocabulary for audit results and expected availability files. | `.factory/copy-audit.md`; stale-state browser test. |
-| F-2-5 | Kept `/demo/` as a complete canonical HTML document with its own title, description, social metadata, h1, and main. | `demo is a complete canonical route and route changes focus the page heading`; live `/demo/` verify JSON. |
+| F-2-5 | Kept `/demo/` as a complete canonical document and gave direct `?demo=1` the same title, descriptions, canonical, h1, and focus behavior. | `demo is a complete canonical route and route changes focus the page heading`; live `/demo/` verify JSON and cold `?demo=1` metadata check. |
 | F-2-6 | Kept route and hash focus movement plus polite announcements. Added the same behavior to the offline route. | Route-focus browser test; offline-shell browser test; live offline h1 was focused. |
 | F-2-7 | Kept local spreadsheet/calendar comparison for missing, extra, shifted, and duration-changed slots. | `@claim:published-comparison`; live demo reports one of each seeded finding. |
 
@@ -49,7 +53,7 @@ Every review-1, review-2, and review-3 finding was rechecked. Earlier repairs re
 
 Compiled JS, CSS, and image assets now use content hashes before receiving immutable cache headers. The build injects the exact fingerprinted filenames into service-worker cache v9.
 
-Evidence: `production assets are fingerprinted and included in the offline cache`; live HTML loads `app-D20hH8sr.js`, and live `sw.js` lists every generated asset.
+Evidence: `production assets are fingerprinted and included in the offline cache`; live HTML loads `app-sI9yq48s.js`, and live `sw.js` lists every generated asset.
 
 ## Final evidence
 
@@ -61,7 +65,7 @@ Evidence: `production assets are fingerprinted and included in the offline cache
 - Local verifier: root, demo, Offline, Privacy, Terms, and 404 had titles, `lang=en`, one h1, main, complete image alternatives, and zero console errors.
 - Live verifier: the same six documents passed after deployment; screenshots are under `.factory/evidence/polish-3/live/`.
 - Live Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 0.9 s, LCP 1.7 s, TBT 20 ms, CLS 0.
-- Build: app JS 26.64 KB raw / 9.18 KB gzip; CSS 18.14 KB raw / 4.67 KB gzip; hero WebP 139.03 KB.
-- Deployment identity: live and local `index.html` SHA-256 both `019c801014153a3814178526d01d34bb123173d65277efe8b311a358c4a04fd8`.
+- Build: app JS 27.15 KB raw / 9.30 KB gzip; CSS 18.14 KB raw / 4.67 KB gzip; hero WebP 139.03 KB.
+- Deployment identity: live and local `index.html` SHA-256 both `52d5ce88ca6d8849a4fb7f85d5f897746160fd56dc0fa1d47ef5110e9a7a22b2`.
 
 No finding remains unresolved.

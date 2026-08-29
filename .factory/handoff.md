@@ -6,10 +6,11 @@ Reviewed candidate: `596393ae61ad99b472c61f2aece8fa648224407c`
 
 Review commit: `e1b939c646d7c7e9925be25104e1de473a6f3388`
 
-Repair commits: `e2db8be6208b7193ea75fc853d07d0434c3e2744`, `e077349`
+Repair commits: `e2db8be6208b7193ea75fc853d07d0434c3e2744`, `e077349`, `55c0c9b`
 
 Live URL: <https://availability-dst-audit.sociobot.in/>
-Deployment: `16d56dfd-8b30-4640-bb9a-e1d412207cce`
+
+Deployment: `459aec1e-f0f3-4ab7-8b37-da43ba662e95`
 
 ## Delivered
 
@@ -48,8 +49,8 @@ Run every exact command in `.factory/claims.json`. The production artifact is `d
 - Live demo isolation: a seeded real key survived unchanged; the demo key remained separate and was removed by Start for real.
 - Live offline check: a fresh demo visit gained service-worker control and reloaded the complete sample with the network disabled.
 - Live Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 0.9 s, LCP 1.7 s, TBT 20 ms, CLS 0.
-- Production sizes: app JS 26.64 KB raw / 9.18 KB gzip; CSS 18.14 KB raw / 4.67 KB gzip; hero WebP 139.03 KB.
-- Deployment identity: local and live `index.html` SHA-256 both `019c801014153a3814178526d01d34bb123173d65277efe8b311a358c4a04fd8`.
+- Production sizes: app JS 27.15 KB raw / 9.30 KB gzip; CSS 18.14 KB raw / 4.67 KB gzip; hero WebP 139.03 KB.
+- Deployment identity: local and live `index.html` SHA-256 both `52d5ce88ca6d8849a4fb7f85d5f897746160fd56dc0fa1d47ef5110e9a7a22b2`.
 - Screenshots and verifier JSON: `.factory/evidence/polish-3/local/` and `.factory/evidence/polish-3/live/`.
 
 ## Known gaps
