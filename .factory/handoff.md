@@ -1,4 +1,17 @@
-# Availability DST Audit — polish round 3 handoff
+# Availability DST Audit — review 4 handoff
+
+Work order: `availability-dst-audit-review-4`
+
+## Review 4 result
+
+- Wrote the independent adversarial review in `.factory/review-4.md`; no product code or production asset changed.
+- In a separate clean clone, `npm ci`, `npm test` (10/10), `npm run build`, all 12 exact claim commands (2/2 each), and `npm run test:e2e` (42/42) passed.
+- Fresh live phone/desktop checks confirmed first-screen clarity, one-click demo, demo-storage isolation, same-origin-only request flow, route metadata, links, focus management, and zero serious/critical Axe findings.
+- The review verdict is **FAIL** only because F-4-1 identifies the non-informative landing label “FIG 01”. Remove it and rerun the copy audit for a zero-finding pass.
+
+---
+
+# Previous polish round 3 handoff
 
 Work order: `availability-dst-audit-polish-3`
 
@@ -53,6 +66,10 @@ Run every exact command in `.factory/claims.json`. The production artifact is `d
 - Deployment identity: local and live `index.html` SHA-256 both `52d5ce88ca6d8849a4fb7f85d5f897746160fd56dc0fa1d47ef5110e9a7a22b2`.
 - Screenshots and verifier JSON: `.factory/evidence/polish-3/local/` and `.factory/evidence/polish-3/live/`.
 
-## Known gaps
+## Previous polish-round known gaps
 
-None. The documented scope remains intentional: this browser-local tool audits declared weekly hours and imported UTC files; it does not reproduce proprietary scheduler rules.
+Superseded by review 4. The current outstanding item is F-4-1 in
+`.factory/review-4.md`: remove the decorative landing label “FIG 01”. The
+documented scope remains intentional: this browser-local tool audits declared
+weekly hours and imported UTC files; it does not reproduce proprietary
+scheduler rules.
