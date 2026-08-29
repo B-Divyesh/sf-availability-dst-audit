@@ -2,49 +2,77 @@
   {
     "id": "sample-audit",
     "claim": "The sample shows weekday booking hours and the March 2026 London clock-change boundary.",
-    "where": "Demo banner, landing action outcome",
+    "where": "Demo banner and landing action outcome",
     "test": "npm run test:claims -- --grep @claim:sample-audit",
-    "sandbox": "Fresh browser context at /?demo=1; assert completed London/New York rows and boundary output."
+    "sandbox": "Fresh browser context at /?demo=1; assert completed London/New York rows and the boundary output."
   },
   {
-    "id": "browser-iana",
-    "claim": "The browser applies selected IANA timezone rules while local working hours remain fixed.",
+    "id": "browser-timezone-rules",
+    "claim": "The browser applies selected timezone rules while local working hours remain fixed.",
     "where": "How the audit works",
-    "test": "npm run test:claims -- --grep @claim:browser-iana",
+    "test": "npm run test:claims -- --grep @claim:browser-timezone-rules",
     "sandbox": "Fresh demo; assert London local hours stay 09:00–17:00 while UTC changes after DST."
+  },
+  {
+    "id": "first-boundary-window",
+    "claim": "The report marks only the first enabled working window after each clock change.",
+    "where": "What the audit checks and How the audit works",
+    "test": "npm run test:claims -- --grep @claim:first-boundary-window",
+    "sandbox": "Fresh demo; assert 30 March is boundary-marked and the four later weekday rows are not."
   },
   {
     "id": "exports",
     "claim": "Export the expected availability file as CSV or UTC ICS.",
-    "where": "Landing fact, export controls, how it works",
+    "where": "Landing fact and export controls",
     "test": "npm run test:claims -- --grep @claim:exports",
     "sandbox": "Fresh demo; download both files and inspect CSV rows and ICS UTC events."
   },
   {
     "id": "time-edge-cases",
-    "claim": "The audit marks missing and repeated local times; missing times are omitted from ICS.",
-    "where": "What the audit checks, repeated and missing time help",
+    "claim": "The audit marks missing and repeated local times; missing times are omitted from ICS and repeated times use the earlier occurrence.",
+    "where": "Repeated and missing time help",
     "test": "npm run test:claims -- --grep @claim:time-edge-cases",
-    "sandbox": "Fresh demo; configure London spring and fall boundary Sundays and inspect results and ICS."
+    "sandbox": "Fresh demo; configure London spring and fall boundary Sundays and inspect the result and ICS downloads."
+  },
+  {
+    "id": "comparison-date-change",
+    "claim": "The report labels a comparison date when it differs from the organizer date.",
+    "where": "What the audit checks",
+    "test": "npm run test:claims -- --grep @claim:comparison-date-change",
+    "sandbox": "Fresh demo; use an early London window against New York and assert the prior comparison date and flag."
+  },
+  {
+    "id": "published-comparison",
+    "claim": "Import UTC CSV or ICS slots to find missing, extra, shifted, and duration-changed published availability.",
+    "where": "Published availability check and How the audit works",
+    "test": "npm run test:claims -- --grep @claim:published-comparison",
+    "sandbox": "Fresh demo; assert the supplied published-slot sample has all four finding kinds and upload a CSV."
   },
   {
     "id": "demo-isolation",
     "claim": "Demo sample data is stored separately, can be reset, and is discarded when starting for real.",
-    "where": "Demo banner, Privacy",
+    "where": "Demo banner and Privacy",
     "test": "npm run test:claims -- --grep @claim:demo-isolation",
     "sandbox": "Fresh demo with a seeded real key; inspect demo namespace, reset, and Start for real behavior."
   },
   {
+    "id": "real-storage",
+    "claim": "After a completed real audit, the app stores its form configuration only in this browser.",
+    "where": "Audit setup and Privacy",
+    "test": "npm run test:claims -- --grep @claim:real-storage",
+    "sandbox": "Fresh real page; complete a one-day audit and inspect localStorage."
+  },
+  {
     "id": "privacy-local",
-    "claim": "The audit runs without an account and exports in the browser without third-party requests.",
-    "where": "Landing facts, Privacy",
+    "claim": "The audit runs without an account and exports or compares files in the browser without third-party requests.",
+    "where": "Landing facts, published availability check, and Privacy",
     "test": "npm run test:claims -- --grep @claim:privacy-local",
-    "sandbox": "Record every request throughout the fresh demo, export, and reset flow; allow only product origin."
+    "sandbox": "Record every request throughout fresh demo, export, comparison, and reset flow; allow only product origin."
   },
   {
     "id": "offline-reload",
     "claim": "The sample audit reloads offline after the first visit.",
-    "where": "Offline banner, README",
+    "where": "Offline banner and README",
     "test": "npm run test:claims -- --grep @claim:offline-reload",
     "sandbox": "Fresh demo visit; wait for service-worker control, go offline, reload, and assert the completed sample."
   }

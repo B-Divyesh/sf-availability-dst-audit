@@ -1,1 +1,1 @@
-Check booking hours across daylight-saving changes before you publish availability.
+Check booking hours across daylight-saving changes before publishing availability.

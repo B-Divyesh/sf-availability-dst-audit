@@ -12,7 +12,7 @@ test('runs a 2026 DST audit, persists config, and exports fixtures', async ({ pa
   await page.locator('#end-date').fill('2026-04-03');
   await page.getByRole('button', { name: 'Run audit' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Expected availability is internally consistent' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No missing or repeated times found' })).toBeVisible();
   await expect(page.getByText('2026-03-29: UTC+00:00 → UTC+01:00')).toBeVisible();
   const boundaryRow = page.locator('tbody tr').filter({ hasText: '2026-03-30' });
   await expect(boundaryRow).toContainText('09:00–17:00');
@@ -21,10 +21,10 @@ test('runs a 2026 DST audit, persists config, and exports fixtures', async ({ pa
 
   const csvDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV' }).click();
-  expect((await csvDownload).suggestedFilename()).toBe('availability-fixture-2026-03-23.csv');
+  expect((await csvDownload).suggestedFilename()).toBe('availability-audit-2026-03-23.csv');
   const icsDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export ICS' }).click();
-  expect((await icsDownload).suggestedFilename()).toBe('availability-fixture-2026-03-23.ics');
+  expect((await icsDownload).suggestedFilename()).toBe('availability-audit-2026-03-23.ics');
 
   expect(await page.evaluate(() => localStorage.getItem('availability-dst-audit:config:v1'))).toContain('Europe/London');
   expect(consoleErrors).toEqual([]);
@@ -45,12 +45,12 @@ test('replaces stale audit output with an accessible rerun state', async ({ page
   await page.locator('#start-date').fill('2026-03-23');
   await page.locator('#end-date').fill('2026-04-03');
   await page.getByRole('button', { name: 'Run audit' }).click();
-  await expect(page.getByRole('heading', { name: 'Expected availability is internally consistent' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No missing or repeated times found' })).toBeVisible();
 
   await page.locator('#comparison-zone').fill('Europe/Berlin');
 
   await expect(page.getByText('Configuration changed. Run the audit again before exporting.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Fixture needs a fresh run' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Audit results need a fresh run' })).toBeVisible();
   await expect(page.locator('#results table')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Export ICS' })).toBeDisabled();
@@ -70,10 +70,25 @@ test('legal pages expose semantic essentials', async ({ page }) => {
   }
 });
 
+test('demo is a complete canonical route and route changes focus the page heading', async ({ page }) => {
+  await page.goto('/demo/');
+  await expect(page).toHaveTitle('Demo — Availability DST Audit');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /completed London/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://availability-dst-audit.sociobot.in/demo/');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Demo — Availability DST Audit');
+  await expect(page.locator('main')).toHaveCount(1);
+  await expect(page.locator('h1')).toHaveCount(1);
+  await page.goto('/privacy/');
+  await expect(page.locator('h1')).toBeFocused();
+  await expect(page.locator('#route-announcement')).toContainText('Privacy');
+  await page.goBack();
+  await expect(page.locator('h1')).toBeFocused();
+});
+
 test('product-owned 404 provides a semantic way back', async ({ page }) => {
   await page.goto('/404.html');
   await expect(page).toHaveTitle('Page not found — Availability DST Audit');
   await expect(page.locator('main')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'That page was not found' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open the sample audit' })).toHaveAttribute('href', '/?demo=1');
+  await expect(page.getByRole('link', { name: 'Open the sample audit' })).toHaveAttribute('href', '/demo/');
 });

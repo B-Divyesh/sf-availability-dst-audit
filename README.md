@@ -4,16 +4,17 @@ Check booking hours across daylight-saving changes before you publish availabili
 
 For consultants, recruiters, and coordinators who publish booking hours in more than one timezone.
 
-Try the completed sample: <https://availability-dst-audit.sociobot.in/?demo=1>
+[Try the completed sample](https://availability-dst-audit.sociobot.in/demo/).
 
 ## What it does
 
 - Creates dated expected booking times from weekly hours.
-- Shows the first working window after a clock change.
+- Marks the first enabled working window after a clock change.
 - Marks missing or repeated local times.
 - Exports the same results as CSV or UTC ICS.
+- Compares imported UTC CSV or ICS slots with expected availability.
 
-The browser uses its IANA timezone rules. The tool does not model scheduler buffers, holidays, overrides, or account settings.
+The browser uses timezone rules built into your browser. IANA is the public timezone-name standard behind names such as Europe/London. The tool does not model scheduler buffers, holidays, overrides, or account settings.
 
 ## Run and verify
 
@@ -38,7 +39,7 @@ node -e "for (const c of require('./.factory/claims.json')) console.log(c.test)"
 
 ## Privacy and demo
 
-The audit and exports run in the browser. The sample demo uses separate local storage and is discarded when you start for real. See [the demo notes](.factory/demo.md), [Privacy](https://availability-dst-audit.sociobot.in/privacy/), and [Terms](https://availability-dst-audit.sociobot.in/terms/).
+The audit, exports, and file comparison run in the browser. The sample demo uses separate local storage and is discarded when you start for real. See [the demo notes](.factory/demo.md), [Privacy](https://availability-dst-audit.sociobot.in/privacy/), and [Terms](https://availability-dst-audit.sociobot.in/terms/).
 
 ## Deploy
 

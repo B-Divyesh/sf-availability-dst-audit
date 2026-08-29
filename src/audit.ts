@@ -1,6 +1,7 @@
 import type { AuditConfig, AuditResult, AuditRow, LocalDateTime, Transition } from './types';
 
 const DAY_MS = 86_400_000;
+const HOUR_MS = 3_600_000;
 const weekdayLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
@@ -103,23 +104,42 @@ function formatInZone(instant: number, zone: string) {
   };
 }
 
+function findTransitionInstant(start: number, end: number, zone: string, before: number): number {
+  let low = start;
+  let high = end;
+  while (high - low > 60_000) {
+    const middle = low + Math.floor((high - low) / 2);
+    if (offsetMinutesAt(middle, zone) === before) low = middle;
+    else high = middle;
+  }
+  return Math.floor(high / 60_000) * 60_000;
+}
+
 function findTransitions(config: AuditConfig): Transition[] {
-  const start = Date.parse(`${config.startDate}T12:00:00Z`) - DAY_MS;
-  const end = Date.parse(`${config.endDate}T12:00:00Z`);
+  const start = Date.parse(`${config.startDate}T00:00:00Z`) - 2 * DAY_MS;
+  const end = Date.parse(`${config.endDate}T23:59:59Z`) + 2 * DAY_MS;
   const transitions: Transition[] = [];
   let previous = offsetMinutesAt(start, config.organizerZone);
-  for (let cursor = start + DAY_MS; cursor <= end; cursor += DAY_MS) {
+  for (let cursor = start + HOUR_MS; cursor <= end; cursor += HOUR_MS) {
     const current = offsetMinutesAt(cursor, config.organizerZone);
-    if (current !== previous) transitions.push({ date: dateKey(cursor), before: previous, after: current });
+    if (current !== previous) {
+      const instant = findTransitionInstant(cursor - HOUR_MS, cursor, config.organizerZone, previous);
+      transitions.push({
+        date: formatInZone(instant, config.organizerZone).date,
+        before: previous,
+        after: current,
+        instant,
+      });
+    }
     previous = current;
   }
-  return transitions;
+  return transitions.filter((transition) => transition.date >= config.startDate && transition.date <= config.endDate);
 }
 
 export function validateConfig(config: AuditConfig): string[] {
   const errors: string[] = [];
-  if (!isValidZone(config.organizerZone)) errors.push('Enter a valid IANA organizer timezone, such as Europe/London.');
-  if (!isValidZone(config.comparisonZone)) errors.push('Enter a valid IANA comparison timezone, such as America/New_York.');
+  if (!isValidZone(config.organizerZone)) errors.push('Enter a valid organizer timezone name, such as Europe/London.');
+  if (!isValidZone(config.comparisonZone)) errors.push('Enter a valid comparison timezone name, such as America/New_York.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(config.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(config.endDate)) errors.push('Choose a valid start and end date.');
   if (config.startDate > config.endDate) errors.push('The end date must be on or after the start date.');
   const days = Math.round((Date.parse(`${config.endDate}T00:00:00Z`) - Date.parse(`${config.startDate}T00:00:00Z`)) / DAY_MS);
@@ -175,18 +195,6 @@ export function runAudit(config: AuditConfig): AuditResult {
       status = 'warning';
     }
 
-    const recentTransition = transitions.find((transition) => {
-      const distance = (cursor - Date.parse(`${transition.date}T00:00:00Z`)) / DAY_MS;
-      return distance >= 0 && distance <= 6;
-    });
-    if (recentTransition) {
-      flags.push(`DST boundary ${formatOffset(recentTransition.before)} → ${formatOffset(recentTransition.after)}`);
-      if (status === 'expected') {
-        detail = 'First scheduled window after an organizer offset change. Local hours stay fixed while the UTC fixture shifts.';
-        status = 'boundary';
-      }
-    }
-
     let utcWindow = 'Unresolvable';
     let comparisonWindow = 'Unresolvable';
     let comparisonDate = '—';
@@ -224,12 +232,25 @@ export function runAudit(config: AuditConfig): AuditResult {
     });
   }
 
+  // A boundary is one concrete audit row: the first valid enabled window after
+  // each organizer-zone offset transition. Do not turn the following week into
+  // a vague "boundary period"—those rows are ordinary expected availability.
+  for (const transition of transitions) {
+    const row = rows.find((candidate) => candidate.startUtc !== null && candidate.startUtc >= transition.instant);
+    if (!row) continue;
+    row.flags.push(`DST boundary ${formatOffset(transition.before)} → ${formatOffset(transition.after)}`);
+    if (row.status === 'expected') {
+      row.status = 'boundary';
+      row.detail = 'First enabled working window after an organizer offset change. Local hours stay fixed while the UTC time shifts.';
+    }
+  }
+
   return {
     rows,
     transitions,
     warningCount: rows.filter((row) => row.status === 'warning').length,
     invalidCount: rows.filter((row) => row.status === 'invalid').length,
-    boundaryCount: rows.filter((row) => row.status === 'boundary').length,
+    boundaryCount: rows.filter((row) => row.flags.some((flag) => flag.startsWith('DST boundary'))).length,
     totalMinutes: rows.reduce((sum, row) => sum + (row.durationMinutes ?? 0), 0),
   };
 }

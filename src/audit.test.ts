@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { offsetMinutesAt, resolveLocal, runAudit, validateConfig } from './audit';
 import { resultToCsv, resultToIcs } from './export';
+import { comparePublishedSlots, parsePublishedSlots } from './comparison';
 import type { AuditConfig } from './types';
 
 function config(overrides: Partial<AuditConfig> = {}): AuditConfig {
@@ -47,7 +48,10 @@ describe('audit matrix', () => {
     expect(after?.utcWindow).toBe('08:00–16:00');
     expect(after?.status).toBe('boundary');
     expect(after?.flags.join(' ')).toContain('DST boundary');
-    expect(result.transitions).toEqual([{ date: '2026-03-29', before: 0, after: 60 }]);
+    expect(result.transitions).toHaveLength(1);
+    expect(result.transitions[0]).toMatchObject({ date: '2026-03-29', before: 0, after: 60 });
+    expect(result.rows.find((row) => row.date === '2026-03-31')?.status).toBe('expected');
+    expect(result.rows.find((row) => row.date === '2026-03-31')?.flags.join(' ')).not.toContain('DST boundary');
   });
 
   it('flags elapsed duration drift when a window crosses the spring change', () => {
@@ -69,7 +73,7 @@ describe('audit matrix', () => {
       endDate: '2025-01-01',
       schedule: Array.from({ length: 7 }, (_, weekday) => ({ weekday, enabled: false, start: '09:00', end: '17:00' })),
     }));
-    expect(errors.join(' ')).toMatch(/IANA organizer timezone/);
+    expect(errors.join(' ')).toMatch(/valid organizer timezone/);
     expect(errors.join(' ')).toMatch(/end date/);
     expect(errors.join(' ')).toMatch(/Enable at least one/);
   });
@@ -84,5 +88,16 @@ describe('audit matrix', () => {
     expect(ics).toContain('BEGIN:VCALENDAR');
     expect(ics).toContain('DTSTART:20260330T080000Z');
     expect(ics).toContain('TRANSP:TRANSPARENT');
+  });
+
+  it('compares imported published CSV slots without changing expected results', () => {
+    const result = runAudit(config({ startDate: '2026-03-23', endDate: '2026-03-23' }));
+    const slots = parsePublishedSlots('published.csv', [
+      'start_utc,end_utc',
+      '2026-03-23T09:30:00Z,2026-03-23T17:30:00Z',
+      '2026-03-23T20:00:00Z,2026-03-23T21:00:00Z',
+    ].join('\n'));
+    const comparison = comparePublishedSlots(result, slots);
+    expect(comparison.findings.map((finding) => finding.kind)).toEqual(['shifted', 'extra']);
   });
 });

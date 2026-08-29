@@ -25,6 +25,8 @@ export type Transition = {
   date: string;
   before: number;
   after: number;
+  /** UTC instant at which the organizer offset changes. */
+  instant: number;
 };
 
 export type AuditRow = {

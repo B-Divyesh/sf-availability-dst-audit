@@ -1,5 +1,7 @@
 import './style.css';
+import './route-focus';
 import { runAudit, transitionLabel, validateConfig } from './audit';
+import { comparePublishedSlots, DEMO_PUBLISHED_CSV, findingLabel, parsePublishedSlots, type ComparisonResult } from './comparison';
 import { downloadText, resultToCsv, resultToIcs } from './export';
 import type { AuditConfig, AuditResult, DaySchedule } from './types';
 
@@ -19,9 +21,15 @@ const configSaved = document.querySelector<HTMLElement>('#saved-state')!;
 const demoBanner = document.querySelector<HTMLElement>('#demo-banner')!;
 const resetDemo = document.querySelector<HTMLButtonElement>('#reset-demo')!;
 const startReal = document.querySelector<HTMLAnchorElement>('#start-real')!;
+const main = document.querySelector<HTMLElement>('#main')!;
+const hero = document.querySelector<HTMLElement>('.hero')!;
+const resultsSection = document.querySelector<HTMLElement>('.results-section')!;
+const comparisonPanel = document.querySelector<HTMLElement>('#published-comparison')!;
+const actualStatus = document.querySelector<HTMLElement>('#actual-status')!;
 
 let currentResult: AuditResult | null = null;
 let currentConfig: AuditConfig | null = null;
+let currentComparison: ComparisonResult | null = null;
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -146,8 +154,8 @@ function markStale() {
       <span class="stale-glyph" aria-hidden="true">↻</span>
       <div>
         <p id="results-stale" class="stale-note" role="status">Configuration changed. Run the audit again before exporting.</p>
-        <h2 id="stale-title">Fixture needs a fresh run</h2>
-        <p>The previous matrix is hidden because it no longer matches the declared hours, zones, or dates. Run the audit to generate an updated fixture.</p>
+        <h2 id="stale-title">Audit results need a fresh run</h2>
+        <p>The previous audit results are hidden because they no longer match the declared hours, zones, or dates. Run the audit again.</p>
       </div>
     </section>`;
   exportCsv.disabled = true;
@@ -166,6 +174,41 @@ function renderEmpty(message: string) {
   results.removeAttribute('data-stale');
   exportCsv.disabled = true;
   exportIcs.disabled = true;
+}
+
+function renderComparison(comparison: ComparisonResult | null = null) {
+  currentComparison = comparison;
+  if (!comparison) {
+    comparisonPanel.innerHTML = `
+      <div><span class="eyebrow">Published availability check</span><h3 id="published-comparison-title">Compare a published file</h3><p>Import UTC CSV or ICS slots to find missing, extra, shifted, or duration-changed times. Files stay in this browser.</p></div>
+      <div class="compare-controls"><label class="file-label" for="actual-file">Choose CSV or ICS</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
+    bindComparisonControls();
+    return;
+  }
+  const counts = ['missing', 'extra', 'shifted', 'duration'].map((kind) => [kind, comparison.findings.filter((finding) => finding.kind === kind).length] as const);
+  const summary = counts.filter(([, count]) => count).map(([kind, count]) => `${count} ${kind}`).join(' · ');
+  comparisonPanel.innerHTML = `
+    <div><span class="eyebrow">Published availability check</span><h3 id="published-comparison-title">${comparison.findings.length ? 'Published slots need review' : 'Published slots match expected times'}</h3><p>${comparison.matched} matched${comparison.findings.length ? ` · ${summary}` : ''}</p></div>
+    <div class="comparison-findings">${comparison.findings.length ? `<ul>${comparison.findings.map((finding) => `<li>${findingLabel(finding)}</li>`).join('')}</ul>` : '<p>No missing, extra, shifted, or duration-changed slots were found.</p>'}</div>
+    <div class="compare-controls"><label class="file-label" for="actual-file">Choose another file</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
+  bindComparisonControls();
+}
+
+function bindComparisonControls() {
+  const input = document.querySelector<HTMLInputElement>('#actual-file')!;
+  const button = document.querySelector<HTMLButtonElement>('#load-actual')!;
+  input.addEventListener('change', () => { actualStatus.textContent = input.files?.[0] ? `${input.files[0].name} is ready to compare.` : ''; });
+  button.addEventListener('click', async () => {
+    const file = input.files?.[0];
+    if (!file || !currentResult || results.dataset.stale) { actualStatus.textContent = 'Choose a CSV or ICS file after running a current audit.'; return; }
+    try {
+      const slots = parsePublishedSlots(file.name, await file.text());
+      renderComparison(comparePublishedSlots(currentResult, slots));
+      actualStatus.textContent = `Compared ${slots.length} published slots in this browser.`;
+    } catch (error) {
+      actualStatus.textContent = error instanceof Error ? error.message : 'The published file could not be read.';
+    }
+  });
 }
 
 function statusMarkup(status: string) {
@@ -187,7 +230,7 @@ function renderResults(config: AuditConfig, result: AuditResult) {
   const verdictClass = issues ? 'review' : 'clear';
   const transitions = result.transitions.length
     ? `<ul>${result.transitions.map((item) => `<li><code>${transitionLabel(item)}</code></li>`).join('')}</ul>`
-    : '<p>No organizer offset change occurs in this window. The fixture is still useful as a baseline.</p>';
+    : '<p>No organizer offset change occurs in this window. These audit results remain useful as a baseline.</p>';
   const rows = result.rows.map((row) => `
     <tr>
       <td><strong>${row.date}</strong><span class="cell-sub">${row.weekday}</span></td>
@@ -201,8 +244,8 @@ function renderResults(config: AuditConfig, result: AuditResult) {
     <div class="verdict verdict--${verdictClass}">
       <div>
         <span class="eyebrow">Audit verdict</span>
-        <h2>${issues ? `${issues} window${issues === 1 ? '' : 's'} need review` : 'Expected availability is internally consistent'}</h2>
-        <p>${result.rows.length} expected windows · ${result.boundaryCount} boundary cases · ${(result.totalMinutes / 60).toLocaleString()} hours</p>
+        <h2>${issues ? `${issues} window${issues === 1 ? '' : 's'} need review` : 'No missing or repeated times found'}</h2>
+        <p>${result.rows.length} expected windows · ${result.boundaryCount} clock-change row${result.boundaryCount === 1 ? '' : 's'} · ${(result.totalMinutes / 60).toLocaleString()} hours</p>
       </div>
       <span class="verdict-mark" aria-hidden="true">${issues ? '!' : '✓'}</span>
     </div>
@@ -218,15 +261,15 @@ function renderResults(config: AuditConfig, result: AuditResult) {
         <span class="eyebrow">Expected availability times</span>
         <h3>Declared hours in each timezone</h3>
       </div>
-      <p>Boundary rows are the first working windows after a clock change.</p>
+      <p>A clock-change row is the first enabled working window after an offset change.</p>
     </div>
-    <div class="table-wrap" tabindex="0" aria-label="Scrollable expected-slot matrix">
+    <div class="table-wrap" tabindex="0" aria-label="Scrollable audit results table">
       <table>
         <caption class="sr-only">Expected availability slots from ${config.startDate} through ${config.endDate}</caption>
         <thead><tr>
           <th scope="col">Organizer date</th>
           <th scope="col">Declared local</th>
-          <th scope="col">UTC fixture</th>
+          <th scope="col">UTC time</th>
           <th scope="col">${config.comparisonZone}</th>
           <th scope="col">Finding</th>
         </tr></thead>
@@ -236,6 +279,7 @@ function renderResults(config: AuditConfig, result: AuditResult) {
   exportCsv.disabled = false;
   exportIcs.disabled = false;
   results.removeAttribute('data-stale');
+  renderComparison();
 }
 
 function saveConfig(config: AuditConfig) {
@@ -268,6 +312,7 @@ function runCurrentAudit({ scroll = true }: { scroll?: boolean } = {}) {
     currentConfig = config;
     saveConfig(config);
     renderResults(config, currentResult);
+    if (demoMode) renderComparison(comparePublishedSlots(currentResult, parsePublishedSlots('sample-published-availability.csv', DEMO_PUBLISHED_CSV)));
     statusRegion.textContent = `Audit complete: ${currentResult.rows.length} expected windows computed.`;
     if (scroll) {
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -295,12 +340,12 @@ form.addEventListener('submit', (event) => {
 
 exportCsv.addEventListener('click', () => {
   if (!currentResult || !currentConfig || results.dataset.stale) return;
-  downloadText(`availability-fixture-${currentConfig.startDate}.csv`, 'text/csv;charset=utf-8', resultToCsv(currentConfig, currentResult));
+  downloadText(`availability-audit-${currentConfig.startDate}.csv`, 'text/csv;charset=utf-8', resultToCsv(currentConfig, currentResult));
 });
 
 exportIcs.addEventListener('click', () => {
   if (!currentResult || !currentConfig || results.dataset.stale) return;
-  downloadText(`availability-fixture-${currentConfig.startDate}.ics`, 'text/calendar;charset=utf-8', resultToIcs(currentConfig, currentResult));
+  downloadText(`availability-audit-${currentConfig.startDate}.ics`, 'text/calendar;charset=utf-8', resultToIcs(currentConfig, currentResult));
 });
 
 function updateNetworkState() {
@@ -312,7 +357,13 @@ window.addEventListener('offline', updateNetworkState);
 updateNetworkState();
 populateZones();
 if (demoMode) {
+  document.body.classList.add('demo-mode');
+  main.insertBefore(resultsSection, hero);
   document.title = 'Demo — Availability DST Audit';
+  document.querySelector('link[rel="canonical"]')?.setAttribute('href', 'https://availability-dst-audit.sociobot.in/demo/');
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', 'Demo — Availability DST Audit');
+  document.querySelector('meta[property="og:url"]')?.setAttribute('content', 'https://availability-dst-audit.sociobot.in/demo/');
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', 'Demo — Availability DST Audit');
   demoBanner.hidden = false;
   setForm(demoConfig());
   configSaved.textContent = 'Demo mode uses separate sample storage.';
