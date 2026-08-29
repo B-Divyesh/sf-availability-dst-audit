@@ -71,6 +71,13 @@ test('legal pages expose semantic essentials', async ({ page }) => {
 });
 
 test('demo is a complete canonical route and route changes focus the page heading', async ({ page }) => {
+  await page.goto('/?demo=1');
+  await expect(page).toHaveTitle('Demo — Availability DST Audit');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /completed London/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://availability-dst-audit.sociobot.in/demo/');
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', /completed London/);
+  await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute('content', /completed London/);
+  await expect(page.locator('h1')).toHaveText('Completed sample booking-hours audit');
   await page.goto('/demo/');
   await expect(page).toHaveTitle('Demo — Availability DST Audit');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /completed London/);

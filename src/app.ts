@@ -420,11 +420,21 @@ populateZones();
 if (demoMode) {
   document.body.classList.add('demo-mode');
   main.insertBefore(resultsSection, hero);
+  const pageTitle = document.querySelector<HTMLHeadingElement>('h1')!;
+  if (hero.contains(pageTitle)) {
+    pageTitle.textContent = 'Completed sample booking-hours audit';
+    pageTitle.className = 'sr-only';
+    main.insertBefore(pageTitle, resultsSection);
+  }
+  const demoDescription = 'Try a completed London and New York booking-hours daylight-saving audit with sample published slots.';
   document.title = 'Demo — Availability DST Audit';
+  document.querySelector('meta[name="description"]')?.setAttribute('content', demoDescription);
   document.querySelector('link[rel="canonical"]')?.setAttribute('href', 'https://availability-dst-audit.sociobot.in/demo/');
   document.querySelector('meta[property="og:title"]')?.setAttribute('content', 'Demo — Availability DST Audit');
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', demoDescription);
   document.querySelector('meta[property="og:url"]')?.setAttribute('content', 'https://availability-dst-audit.sociobot.in/demo/');
   document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', 'Demo — Availability DST Audit');
+  document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', demoDescription);
   demoBanner.hidden = false;
   setForm(demoConfig());
   configSaved.textContent = 'Demo mode uses separate sample storage.';
