@@ -13,8 +13,7 @@ function config(overrides: Partial<AuditConfig> = {}): AuditConfig {
     schedule: Array.from({ length: 7 }, (_, weekday) => ({
       weekday,
       enabled: weekday > 0 && weekday < 6,
-      start: '09:00',
-      end: '17:00',
+      windows: [{ start: '09:00', end: '17:00' }],
     })),
     ...overrides,
   };
@@ -58,7 +57,7 @@ describe('audit matrix', () => {
     const sunday = config({
       startDate: '2026-03-29',
       endDate: '2026-03-29',
-      schedule: Array.from({ length: 7 }, (_, weekday) => ({ weekday, enabled: weekday === 0, start: '00:30', end: '02:30' })),
+      schedule: Array.from({ length: 7 }, (_, weekday) => ({ weekday, enabled: weekday === 0, windows: [{ start: '00:30', end: '02:30' }] })),
     });
     const row = runAudit(sunday).rows[0]!;
     expect(row.durationMinutes).toBe(60);
@@ -71,7 +70,7 @@ describe('audit matrix', () => {
       organizerZone: 'EST',
       startDate: '2026-06-30',
       endDate: '2025-01-01',
-      schedule: Array.from({ length: 7 }, (_, weekday) => ({ weekday, enabled: false, start: '09:00', end: '17:00' })),
+      schedule: Array.from({ length: 7 }, (_, weekday) => ({ weekday, enabled: false, windows: [{ start: '09:00', end: '17:00' }] })),
     }));
     expect(errors.join(' ')).toMatch(/valid organizer timezone/);
     expect(errors.join(' ')).toMatch(/end date/);
@@ -99,5 +98,32 @@ describe('audit matrix', () => {
     ].join('\n'));
     const comparison = comparePublishedSlots(result, slots);
     expect(comparison.findings.map((finding) => finding.kind)).toEqual(['shifted', 'extra']);
+  });
+
+  it('includes multiple non-overlapping working windows on one weekday', () => {
+    const splitMonday = config({
+      startDate: '2026-03-23',
+      endDate: '2026-03-23',
+      schedule: Array.from({ length: 7 }, (_, weekday) => ({
+        weekday,
+        enabled: weekday === 1,
+        windows: weekday === 1
+          ? [{ start: '09:00', end: '12:00' }, { start: '13:00', end: '17:00' }]
+          : [{ start: '09:00', end: '17:00' }],
+      })),
+    });
+    const result = runAudit(splitMonday);
+    expect(result.rows.map((row) => row.localWindow)).toEqual(['09:00–12:00', '13:00–17:00']);
+    expect(resultToCsv(splitMonday, result).split('\n')).toHaveLength(3);
+    expect(resultToIcs(splitMonday, result).match(/BEGIN:VEVENT/g)).toHaveLength(2);
+  });
+
+  it('accepts UTC calendar events and rejects timezone-qualified or floating calendar times', () => {
+    const utc = 'BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20260323T090000Z\nDTEND:20260323T170000Z\nEND:VEVENT\nEND:VCALENDAR';
+    expect(parsePublishedSlots('published.ics', utc)).toEqual([{ startUtc: Date.parse('2026-03-23T09:00:00Z'), endUtc: Date.parse('2026-03-23T17:00:00Z') }]);
+    const zoned = 'BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART;TZID=America/New_York:20260323T090000\nDTEND;TZID=America/New_York:20260323T170000\nEND:VEVENT\nEND:VCALENDAR';
+    const floating = 'BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20260323T090000\nDTEND:20260323T170000\nEND:VEVENT\nEND:VCALENDAR';
+    expect(() => parsePublishedSlots('zoned.ics', zoned)).toThrow(/timezone-qualified/);
+    expect(() => parsePublishedSlots('floating.ics', floating)).toThrow(/timezone-qualified/);
   });
 });

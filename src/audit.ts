@@ -147,7 +147,16 @@ export function validateConfig(config: AuditConfig): string[] {
   const enabled = config.schedule.filter((day) => day.enabled);
   if (!enabled.length) errors.push('Enable at least one day of weekly availability.');
   for (const day of enabled) {
-    if (day.start >= day.end) errors.push(`${weekdayLong[day.weekday]} must end after it starts.`);
+    if (!day.windows.length) errors.push(`Add at least one working window for ${weekdayLong[day.weekday]}.`);
+    const ordered = [...day.windows].sort((a, b) => a.start.localeCompare(b.start));
+    ordered.forEach((window, index) => {
+      if (!window.start || !window.end || window.start >= window.end) {
+        errors.push(`${weekdayLong[day.weekday]} window ${index + 1} must end after it starts.`);
+      }
+      if (index > 0 && ordered[index - 1]!.end > window.start) {
+        errors.push(`${weekdayLong[day.weekday]} working windows must not overlap.`);
+      }
+    });
   }
   return [...new Set(errors)];
 }
@@ -166,69 +175,72 @@ export function runAudit(config: AuditConfig): AuditResult {
     const weekday = new Date(cursor).getUTCDay();
     const hours = schedule.get(weekday);
     if (!hours?.enabled) continue;
-    const starts = resolveLocal(localFor(date, hours.start), config.organizerZone);
-    const ends = resolveLocal(localFor(date, hours.end), config.organizerZone);
-    const flags: string[] = [];
-    let detail = 'Local working hours remain fixed.';
-    let status: AuditRow['status'] = 'expected';
-    if (!starts.length || !ends.length) {
-      flags.push('Missing local time');
-      detail = 'This civil time does not exist because the clock jumps forward. Change the window or review the vendor behavior.';
-      status = 'invalid';
-    } else if (starts.length > 1 || ends.length > 1) {
-      flags.push('Ambiguous local time');
-      detail = 'This civil time occurs twice when the clock moves back. The export uses the earlier occurrence; verify the intended fold.';
-      status = 'warning';
-    }
+    const windows = [...hours.windows].sort((a, b) => a.start.localeCompare(b.start));
+    windows.forEach((hoursWindow, windowIndex) => {
+      const starts = resolveLocal(localFor(date, hoursWindow.start), config.organizerZone);
+      const ends = resolveLocal(localFor(date, hoursWindow.end), config.organizerZone);
+      const flags: string[] = [];
+      let detail = 'Local working hours remain fixed.';
+      let status: AuditRow['status'] = 'expected';
+      if (!starts.length || !ends.length) {
+        flags.push('Missing local time');
+        detail = 'This local time does not exist because the clock jumps forward. Change the window or review the scheduler behavior.';
+        status = 'invalid';
+      } else if (starts.length > 1 || ends.length > 1) {
+        flags.push('Ambiguous local time');
+        detail = 'This local time occurs twice when the clock moves back. The export uses the earlier occurrence; verify the intended time.';
+        status = 'warning';
+      }
 
-    const startUtc = starts[0] ?? null;
-    const endUtc = ends[0] ?? null;
-    const durationMinutes = startUtc !== null && endUtc !== null ? (endUtc - startUtc) / 60_000 : null;
-    const nominalMinutes = (() => {
-      const startTime = parseTime(hours.start);
-      const endTime = parseTime(hours.end);
-      return endTime.hour * 60 + endTime.minute - startTime.hour * 60 - startTime.minute;
-    })();
-    if (durationMinutes !== null && durationMinutes !== nominalMinutes) {
-      flags.push(`Duration drift ${durationMinutes - nominalMinutes > 0 ? '+' : ''}${durationMinutes - nominalMinutes}m`);
-      detail = 'Elapsed UTC duration differs from the declared wall-clock duration across a clock change.';
-      status = 'warning';
-    }
+      const startUtc = starts[0] ?? null;
+      const endUtc = ends[0] ?? null;
+      const durationMinutes = startUtc !== null && endUtc !== null ? (endUtc - startUtc) / 60_000 : null;
+      const nominalMinutes = (() => {
+        const startTime = parseTime(hoursWindow.start);
+        const endTime = parseTime(hoursWindow.end);
+        return endTime.hour * 60 + endTime.minute - startTime.hour * 60 - startTime.minute;
+      })();
+      if (durationMinutes !== null && durationMinutes !== nominalMinutes) {
+        flags.push(`Duration drift ${durationMinutes - nominalMinutes > 0 ? '+' : ''}${durationMinutes - nominalMinutes}m`);
+        detail = 'Elapsed UTC duration differs from the declared wall-clock duration across a clock change.';
+        status = 'warning';
+      }
 
-    let utcWindow = 'Unresolvable';
-    let comparisonWindow = 'Unresolvable';
-    let comparisonDate = '—';
-    let organizerOffset: number | null = null;
-    let comparisonOffset: number | null = null;
-    if (startUtc !== null && endUtc !== null) {
-      const utcStart = new Date(startUtc).toISOString().slice(11, 16);
-      const utcEnd = new Date(endUtc).toISOString().slice(11, 16);
-      utcWindow = `${utcStart}–${utcEnd}`;
-      const compareStart = formatInZone(startUtc, config.comparisonZone);
-      const compareEnd = formatInZone(endUtc, config.comparisonZone);
-      comparisonWindow = `${compareStart.time}–${compareEnd.time}`;
-      comparisonDate = compareStart.date === compareEnd.date ? compareStart.date : `${compareStart.date} → ${compareEnd.date}`;
-      organizerOffset = offsetMinutesAt(startUtc, config.organizerZone);
-      comparisonOffset = offsetMinutesAt(startUtc, config.comparisonZone);
-      if (compareStart.date !== date) flags.push('Comparison date differs');
-    }
+      let utcWindow = 'Unresolvable';
+      let comparisonWindow = 'Unresolvable';
+      let comparisonDate = '—';
+      let organizerOffset: number | null = null;
+      let comparisonOffset: number | null = null;
+      if (startUtc !== null && endUtc !== null) {
+        const utcStart = new Date(startUtc).toISOString().slice(11, 16);
+        const utcEnd = new Date(endUtc).toISOString().slice(11, 16);
+        utcWindow = `${utcStart}–${utcEnd}`;
+        const compareStart = formatInZone(startUtc, config.comparisonZone);
+        const compareEnd = formatInZone(endUtc, config.comparisonZone);
+        comparisonWindow = `${compareStart.time}–${compareEnd.time}`;
+        comparisonDate = compareStart.date === compareEnd.date ? compareStart.date : `${compareStart.date} → ${compareEnd.date}`;
+        organizerOffset = offsetMinutesAt(startUtc, config.organizerZone);
+        comparisonOffset = offsetMinutesAt(startUtc, config.comparisonZone);
+        if (compareStart.date !== date) flags.push('Comparison date differs');
+      }
 
-    rows.push({
-      id: `${date}-${weekday}`,
-      date,
-      weekday: weekdayLong[weekday] ?? '',
-      localWindow: `${hours.start}–${hours.end}`,
-      utcWindow,
-      comparisonWindow,
-      comparisonDate,
-      durationMinutes,
-      startUtc,
-      endUtc,
-      organizerOffset,
-      comparisonOffset,
-      status,
-      flags,
-      detail,
+      rows.push({
+        id: `${date}-${weekday}-${windowIndex}`,
+        date,
+        weekday: weekdayLong[weekday] ?? '',
+        localWindow: `${hoursWindow.start}–${hoursWindow.end}`,
+        utcWindow,
+        comparisonWindow,
+        comparisonDate,
+        durationMinutes,
+        startUtc,
+        endUtc,
+        organizerOffset,
+        comparisonOffset,
+        status,
+        flags,
+        detail,
+      });
     });
   }
 

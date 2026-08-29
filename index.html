@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#090d12">
-    <meta name="description" content="Check booking hours across daylight-saving changes, then export expected CSV or ICS availability files.">
+    <meta name="description" content="Check booking hours across daylight-saving changes, then export expected spreadsheet or calendar files.">
     <link rel="canonical" href="https://availability-dst-audit.sociobot.in/">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Availability DST Audit — check booking hours">
@@ -34,10 +34,10 @@
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-copy">
           <span class="kicker"><span>●</span> Daylight-saving availability check</span>
-          <h1 id="page-title">Check booking hours<br>across <em>clock changes</em></h1>
+          <h1 id="page-title">Check booking hours<br> across <em>clock changes</em></h1>
           <p>For people who publish availability, find hours that shift when daylight saving starts or ends.</p>
           <div class="hero-actions"><a class="button button--primary" href="/demo/">Try it with sample data <span aria-hidden="true">→</span></a><span class="action-outcome">See a completed London–New York audit.</span></div>
-          <ul class="hero-facts" aria-label="Product facts"><li>Runs in your browser</li><li>No account</li><li>Export CSV or ICS</li></ul>
+          <ul class="hero-facts" aria-label="Product facts"><li>Runs in your browser</li><li>No account</li><li>Export spreadsheet or calendar files</li></ul>
         </div>
         <figure class="hero-art"><picture><source srcset="/src/assets/time-boundary-observatory.webp" type="image/webp"><img src="/src/assets/time-boundary-observatory.png" width="1280" height="853" fetchpriority="high" decoding="async" alt="Pixel-art observatory showing a daylight-saving boundary between two clock towers"></picture><figcaption><span>FIG 01</span> Clock changes can shift booking hours. Check the dates that change.</figcaption></figure>
       </section>
@@ -45,7 +45,7 @@
         <div class="section-intro"><span class="section-number">01–02</span><div><span class="eyebrow">Audit setup</span><h2 id="setup-title">Set working hours and test dates</h2><p>Enter the organizer’s local hours. Pick a second timezone to compare the booking time.</p></div></div>
         <form id="audit-form" novalidate>
           <div class="form-layout">
-            <fieldset class="config-block hours-block"><legend><span>01</span> Set weekly working hours</legend><p class="field-help">Only enabled days appear in the expected availability file. Use one continuous window per day.</p><div id="weekly-hours" class="weekly-hours"></div></fieldset>
+            <fieldset class="config-block hours-block"><legend><span>01</span> Set weekly working hours</legend><p class="field-help">Only enabled days appear in the expected availability file. Add separate windows for split working days.</p><div id="weekly-hours" class="weekly-hours"></div></fieldset>
             <div class="config-stack">
               <fieldset class="config-block"><legend><span>02</span> Choose timezones and dates</legend><div class="field-grid">
                 <label class="field field--wide" for="organizer-zone"><span>Organizer timezone</span><input id="organizer-zone" name="organizer-zone" list="timezone-options" autocomplete="off" spellcheck="false" required aria-describedby="zone-hint"></label>
@@ -53,16 +53,16 @@
                 <datalist id="timezone-options"></datalist><p id="zone-hint" class="field-help field--wide">Use names such as Europe/London or America/New_York. Do not use abbreviations such as EST.</p>
                 <label class="field" for="start-date"><span>Start date</span><input id="start-date" name="start-date" type="date" required></label><label class="field" for="end-date"><span>End date</span><input id="end-date" name="end-date" type="date" required></label>
               </div></fieldset>
-              <aside class="boundary-note" aria-labelledby="boundary-note-title"><div class="boundary-icon" aria-hidden="true">↯</div><div><h3 id="boundary-note-title">What the audit checks</h3><p>It marks the first post-change window, missing or repeated times, duration changes, and comparison dates.</p></div></aside>
+              <aside class="boundary-note" aria-labelledby="boundary-note-title"><div class="boundary-icon" aria-hidden="true">↯</div><div><h3 id="boundary-note-title">What the audit checks</h3><p>It marks the first enabled working window after each clock change, plus missing, repeated, duration-changed, or date-shifted times.</p></div></aside>
             </div>
           </div>
           <div id="form-status" class="form-status" role="alert" tabindex="-1"></div><div class="run-bar"><div><span class="privacy-dot" aria-hidden="true"></span><span id="saved-state">Run an audit to save this form in this browser.</span></div><button class="button button--primary" type="submit">Run audit</button></div>
         </form>
       </section>
-      <section class="results-section" aria-labelledby="results-title"><div class="results-head"><div><span class="eyebrow">Expected availability file</span><h2 id="results-title">Audit results</h2></div><div class="export-actions" aria-label="Export expected availability file"><button id="export-csv" class="button button--secondary" type="button" disabled>Export CSV</button><button id="export-ics" class="button button--secondary" type="button" disabled>Export ICS</button></div></div><div id="results" tabindex="-1" aria-live="polite"></div><aside id="published-comparison" class="published-comparison" aria-labelledby="published-comparison-title"></aside><p id="actual-status" class="form-status" role="status" aria-live="polite"></p></section>
-      <section id="how-it-works" class="method-section" aria-labelledby="method-title"><div class="section-intro"><span class="section-number">03</span><div><span class="eyebrow">How it works</span><h2 id="method-title">How the audit works</h2></div></div><div class="method-grid"><article><span class="method-glyph" aria-hidden="true">1</span><h3>Use your working hours</h3><p>The browser checks each local time using timezone rules built into your browser.</p></article><article><span class="method-glyph" aria-hidden="true">2</span><h3>Find clock-change dates</h3><p>The report marks the first enabled working window after each clock change. It also marks times that repeat or do not occur.</p></article><article><span class="method-glyph" aria-hidden="true">3</span><h3>Compare published times</h3><p>Import a UTC CSV or ICS file. The report finds missing, extra, shifted, and duration-changed slots.</p></article></div><details class="ambiguity-note"><summary>How repeated and missing local times work</summary><p>Repeated local times are marked Review. The ICS file uses the earlier occurrence. Missing local times are marked Invalid and omitted from ICS.</p></details></section>
+      <section class="results-section" aria-labelledby="results-title"><div class="results-head"><div><span class="eyebrow">Expected availability file</span><h2 id="results-title">Audit results</h2></div><div class="export-actions" aria-label="Export expected availability file"><button id="export-csv" class="button button--secondary" type="button" disabled>Export CSV spreadsheet</button><button id="export-ics" class="button button--secondary" type="button" disabled>Export calendar (.ics)</button></div></div><div id="results" tabindex="-1" aria-live="polite"></div><aside id="published-comparison" class="published-comparison" aria-labelledby="published-comparison-title"></aside><p id="actual-status" class="form-status" role="status" aria-live="polite"></p></section>
+      <section id="how-it-works" class="method-section" aria-labelledby="method-title"><div class="section-intro"><span class="section-number">03</span><div><span class="eyebrow">How it works</span><h2 id="method-title">How the audit works</h2></div></div><div class="method-grid"><article><span class="method-glyph" aria-hidden="true">1</span><h3>Use your working hours</h3><p>The browser checks each local time using timezone rules built into your browser.</p></article><article><span class="method-glyph" aria-hidden="true">2</span><h3>Find clock-change dates</h3><p>The report marks the first enabled working window after each clock change. It also marks times that repeat or do not occur.</p></article><article><span class="method-glyph" aria-hidden="true">3</span><h3>Compare published times</h3><p>Import a CSV spreadsheet or calendar (.ics) file whose start and end times are in UTC.</p><p>The report finds missing, extra, shifted, and duration-changed slots.</p></article></div><details class="ambiguity-note"><summary>How repeated and missing local times work</summary><p>Repeated local times are marked Review. The calendar file uses the earlier occurrence. Missing local times are marked Invalid and omitted from it.</p></details></section>
     </main>
-    <footer><div><span class="brand-footer">Availability/DST Audit</span><p>Check booking hours around daylight-saving changes.</p></div><div class="footer-links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-availability-dst-audit">Source <span class="sr-only">(opens GitHub)</span></a></div><p class="asset-note">Built by Param Factory · build 56c8d3c+polish-2. Hero artwork was generated for this project with the Factory image model.</p></footer>
+    <footer><div><span class="brand-footer">Availability/DST Audit</span><p>Check booking hours around daylight-saving changes.</p></div><div class="footer-links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-availability-dst-audit">Source <span class="sr-only">(opens GitHub)</span></a></div><p class="asset-note">Built by Param Factory · build polish-3. Hero artwork was generated for this project with the Factory image model.</p></footer>
     <script type="module" src="/src/app.ts"></script>
   </body>
 </html>

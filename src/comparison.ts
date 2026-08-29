@@ -41,12 +41,13 @@ function parseCsvLine(line: string) {
 
 function parseDate(value: string) {
   const normalized = value.trim().replace(/^"|"$/g, '');
-  const instant = Date.parse(normalized.endsWith('Z') ? normalized : `${normalized}Z`);
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?Z$/.test(normalized)) return null;
+  const instant = Date.parse(normalized);
   return Number.isFinite(instant) ? instant : null;
 }
 
 function parseIcsDate(value: string) {
-  const match = value.trim().match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/);
+  const match = value.trim().match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
   if (!match) return null;
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]), Number(match[6]));
 }
@@ -56,13 +57,19 @@ export function parsePublishedSlots(name: string, contents: string): PublishedSl
   if (name.toLowerCase().endsWith('.ics') || contents.includes('BEGIN:VCALENDAR')) {
     const slots: PublishedSlot[] = [];
     for (const event of contents.split('BEGIN:VEVENT').slice(1)) {
-      const start = event.match(/^DTSTART(?:;[^:]*)?:(.+)$/m)?.[1];
-      const end = event.match(/^DTEND(?:;[^:]*)?:(.+)$/m)?.[1];
-      const startUtc = start ? parseIcsDate(start) : null;
-      const endUtc = end ? parseIcsDate(end) : null;
-      if (startUtc !== null && endUtc !== null && endUtc > startUtc) slots.push({ startUtc, endUtc });
+      const start = event.match(/^DTSTART([^:]*):(.+)$/m);
+      const end = event.match(/^DTEND([^:]*):(.+)$/m);
+      if (!start || !end || start[1] || end[1] || !start[2]!.trim().endsWith('Z') || !end[2]!.trim().endsWith('Z')) {
+        throw new Error('This calendar uses local or timezone-qualified times. Export it again with UTC start and end times ending in Z.');
+      }
+      const startUtc = parseIcsDate(start[2]!);
+      const endUtc = parseIcsDate(end[2]!);
+      if (startUtc === null || endUtc === null || endUtc <= startUtc) {
+        throw new Error('A calendar event has invalid UTC start or end times. Export it again with complete UTC times ending in Z.');
+      }
+      slots.push({ startUtc, endUtc });
     }
-    if (!slots.length) throw new Error('No UTC DTSTART and DTEND pairs were found in this ICS file.');
+    if (!slots.length) throw new Error('No UTC start and end times were found in this calendar file.');
     return slots;
   }
 
@@ -72,11 +79,14 @@ export function parsePublishedSlots(name: string, contents: string): PublishedSl
   const startIndex = headers.findIndex((header) => ['start_utc', 'utc_start', 'start'].includes(header));
   const endIndex = headers.findIndex((header) => ['end_utc', 'utc_end', 'end'].includes(header));
   if (startIndex < 0 || endIndex < 0) throw new Error('CSV needs UTC columns named start_utc and end_utc.');
-  const slots = lines.slice(1).flatMap((line) => {
+  const slots = lines.slice(1).map((line) => {
     const values = parseCsvLine(line);
     const startUtc = parseDate(values[startIndex] ?? '');
     const endUtc = parseDate(values[endIndex] ?? '');
-    return startUtc !== null && endUtc !== null && endUtc > startUtc ? [{ startUtc, endUtc }] : [];
+    if (startUtc === null || endUtc === null || endUtc <= startUtc) {
+      throw new Error('CSV start and end times must be valid UTC timestamps ending in Z.');
+    }
+    return { startUtc, endUtc };
   });
   if (!slots.length) throw new Error('No valid UTC start and end times were found in this CSV file.');
   return slots;
@@ -125,11 +135,13 @@ export function comparePublishedSlots(result: AuditResult, actual: PublishedSlot
 export const DEMO_PUBLISHED_CSV = `start_utc,end_utc
 2026-03-23T09:00:00Z,2026-03-23T17:00:00Z
 2026-03-24T09:00:00Z,2026-03-24T17:00:00Z
-2026-03-25T09:30:00Z,2026-03-25T17:30:00Z
+2026-03-25T09:00:00Z,2026-03-25T12:00:00Z
+2026-03-25T13:30:00Z,2026-03-25T17:30:00Z
 2026-03-26T09:00:00Z,2026-03-26T16:00:00Z
 2026-03-27T09:00:00Z,2026-03-27T17:00:00Z
 2026-03-31T08:00:00Z,2026-03-31T16:00:00Z
-2026-04-01T08:00:00Z,2026-04-01T16:00:00Z
+2026-04-01T08:00:00Z,2026-04-01T11:00:00Z
+2026-04-01T12:00:00Z,2026-04-01T16:00:00Z
 2026-04-01T18:00:00Z,2026-04-01T19:00:00Z
 2026-04-02T08:00:00Z,2026-04-02T16:00:00Z
 2026-04-03T08:00:00Z,2026-04-03T16:00:00Z

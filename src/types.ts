@@ -1,6 +1,10 @@
 export type DaySchedule = {
   weekday: number;
   enabled: boolean;
+  windows: TimeWindow[];
+};
+
+export type TimeWindow = {
   start: string;
   end: string;
 };

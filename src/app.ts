@@ -48,8 +48,7 @@ function defaults(): AuditConfig {
     schedule: dayNames.map((_, weekday) => ({
       weekday,
       enabled: weekday > 0 && weekday < 6,
-      start: '09:00',
-      end: '17:00',
+      windows: [{ start: '09:00', end: '17:00' }],
     })),
   };
 }
@@ -63,16 +62,45 @@ function demoConfig(): AuditConfig {
     schedule: dayNames.map((_, weekday) => ({
       weekday,
       enabled: weekday > 0 && weekday < 6,
-      start: '09:00',
-      end: '17:00',
+      windows: weekday === 3
+        ? [{ start: '09:00', end: '12:00' }, { start: '13:00', end: '17:00' }]
+        : [{ start: '09:00', end: '17:00' }],
     })),
+  };
+}
+
+function normalizeConfig(value: unknown): AuditConfig {
+  const fallback = defaults();
+  if (!value || typeof value !== 'object') return fallback;
+  const saved = value as Omit<Partial<AuditConfig>, 'schedule'> & {
+    schedule?: Array<Partial<DaySchedule> & { start?: string; end?: string }>;
+  };
+  const schedule = dayNames.map((_, weekday) => {
+    const day = saved.schedule?.find((candidate) => candidate.weekday === weekday);
+    const validTime = (time: unknown): time is string => typeof time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
+    const legacyWindow = validTime(day?.start) && validTime(day?.end) ? [{ start: day.start, end: day.end }] : null;
+    const windows = Array.isArray(day?.windows) && day.windows.length
+      ? day.windows.filter((window) => window && validTime(window.start) && validTime(window.end))
+      : legacyWindow ?? fallback.schedule[weekday]!.windows;
+    return {
+      weekday,
+      enabled: typeof day?.enabled === 'boolean' ? day.enabled : fallback.schedule[weekday]!.enabled,
+      windows: windows.length ? windows.map((window) => ({ start: window.start, end: window.end })) : [{ start: '09:00', end: '17:00' }],
+    };
+  });
+  return {
+    organizerZone: typeof saved.organizerZone === 'string' ? saved.organizerZone : fallback.organizerZone,
+    comparisonZone: typeof saved.comparisonZone === 'string' ? saved.comparisonZone : fallback.comparisonZone,
+    startDate: typeof saved.startDate === 'string' ? saved.startDate : fallback.startDate,
+    endDate: typeof saved.endDate === 'string' ? saved.endDate : fallback.endDate,
+    schedule,
   };
 }
 
 function loadConfig(): AuditConfig {
   try {
     const saved = localStorage.getItem(demoMode ? DEMO_STORAGE_KEY : STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as AuditConfig;
+    if (saved) return normalizeConfig(JSON.parse(saved));
   } catch {
     configSaved.textContent = 'Local preferences are unavailable in this browser.';
   }
@@ -98,16 +126,21 @@ function renderSchedule(schedule: DaySchedule[]) {
         <input type="checkbox" name="day-${day.weekday}" ${day.enabled ? 'checked' : ''}>
         <span>${dayNames[day.weekday]}</span>
       </label>
-      <div class="time-pair">
-        <label>
-          <span class="sr-only">${dayNames[day.weekday]} start time</span>
-          <input type="time" name="start-${day.weekday}" value="${day.start}" ${day.enabled ? '' : 'disabled'}>
-        </label>
-        <span aria-hidden="true">→</span>
-        <label>
-          <span class="sr-only">${dayNames[day.weekday]} end time</span>
-          <input type="time" name="end-${day.weekday}" value="${day.end}" ${day.enabled ? '' : 'disabled'}>
-        </label>
+      <div class="day-windows">
+        ${day.windows.map((window, windowIndex) => `
+          <div class="time-window" data-window-index="${windowIndex}">
+            <label>
+              <span class="sr-only">${dayNames[day.weekday]} window ${windowIndex + 1} start time</span>
+              <input type="time" data-field="start" value="${window.start}" ${day.enabled ? '' : 'disabled'}>
+            </label>
+            <span aria-hidden="true">→</span>
+            <label>
+              <span class="sr-only">${dayNames[day.weekday]} window ${windowIndex + 1} end time</span>
+              <input type="time" data-field="end" value="${window.end}" ${day.enabled ? '' : 'disabled'}>
+            </label>
+            ${day.windows.length > 1 ? `<button class="window-action remove-window" type="button" ${day.enabled ? '' : 'disabled'} aria-label="Remove ${dayNames[day.weekday]} window ${windowIndex + 1}">−</button>` : ''}
+          </div>`).join('')}
+        <button class="window-action add-window" type="button" ${day.enabled ? '' : 'disabled'}>+ Add working window</button>
       </div>
       <span class="day-state">${day.enabled ? 'Open' : 'Closed'}</span>
     </div>
@@ -116,9 +149,31 @@ function renderSchedule(schedule: DaySchedule[]) {
   container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((checkbox) => {
     checkbox.addEventListener('change', () => {
       const row = checkbox.closest<HTMLElement>('.hours-row')!;
-      row.querySelectorAll<HTMLInputElement>('input[type="time"]').forEach((input) => { input.disabled = !checkbox.checked; });
+      row.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input[type="time"], .window-action').forEach((control) => { control.disabled = !checkbox.checked; });
       row.querySelector<HTMLElement>('.day-state')!.textContent = checkbox.checked ? 'Open' : 'Closed';
       markStale();
+    });
+  });
+  container.querySelectorAll<HTMLButtonElement>('.add-window').forEach((button) => {
+    button.addEventListener('click', () => {
+      const weekday = Number(button.closest<HTMLElement>('.hours-row')!.dataset.weekday);
+      const next = getConfig().schedule;
+      next[weekday]!.windows.push({ start: '', end: '' });
+      renderSchedule(next);
+      markStale();
+      container.querySelector<HTMLElement>(`.hours-row[data-weekday="${weekday}"] .time-window:last-of-type input`)?.focus();
+    });
+  });
+  container.querySelectorAll<HTMLButtonElement>('.remove-window').forEach((button) => {
+    button.addEventListener('click', () => {
+      const row = button.closest<HTMLElement>('.hours-row')!;
+      const weekday = Number(row.dataset.weekday);
+      const windowIndex = Number(button.closest<HTMLElement>('.time-window')!.dataset.windowIndex);
+      const next = getConfig().schedule;
+      next[weekday]!.windows.splice(windowIndex, 1);
+      renderSchedule(next);
+      markStale();
+      container.querySelector<HTMLElement>(`.hours-row[data-weekday="${weekday}"] .add-window`)?.focus();
     });
   });
 }
@@ -137,12 +192,17 @@ function getConfig(): AuditConfig {
     comparisonZone: (form.elements.namedItem('comparison-zone') as HTMLInputElement).value.trim(),
     startDate: (form.elements.namedItem('start-date') as HTMLInputElement).value,
     endDate: (form.elements.namedItem('end-date') as HTMLInputElement).value,
-    schedule: dayNames.map((_, weekday) => ({
-      weekday,
-      enabled: (form.elements.namedItem(`day-${weekday}`) as HTMLInputElement).checked,
-      start: (form.elements.namedItem(`start-${weekday}`) as HTMLInputElement).value,
-      end: (form.elements.namedItem(`end-${weekday}`) as HTMLInputElement).value,
-    })),
+    schedule: dayNames.map((_, weekday) => {
+      const row = form.querySelector<HTMLElement>(`.hours-row[data-weekday="${weekday}"]`)!;
+      return {
+        weekday,
+        enabled: (form.elements.namedItem(`day-${weekday}`) as HTMLInputElement).checked,
+        windows: [...row.querySelectorAll<HTMLElement>('.time-window')].map((window) => ({
+          start: window.querySelector<HTMLInputElement>('input[data-field="start"]')!.value,
+          end: window.querySelector<HTMLInputElement>('input[data-field="end"]')!.value,
+        })),
+      };
+    }),
   };
 }
 
@@ -180,8 +240,8 @@ function renderComparison(comparison: ComparisonResult | null = null) {
   currentComparison = comparison;
   if (!comparison) {
     comparisonPanel.innerHTML = `
-      <div><span class="eyebrow">Published availability check</span><h3 id="published-comparison-title">Compare a published file</h3><p>Import UTC CSV or ICS slots to find missing, extra, shifted, or duration-changed times. Files stay in this browser.</p></div>
-      <div class="compare-controls"><label class="file-label" for="actual-file">Choose CSV or ICS</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
+      <div><span class="eyebrow">Published availability check</span><h3 id="published-comparison-title">Compare a published file</h3><p>Import a CSV spreadsheet or calendar (.ics) file whose start and end times are in UTC. Files stay in this browser.</p></div>
+      <div class="compare-controls"><label class="file-label" for="actual-file">Choose a UTC spreadsheet or calendar file</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
     bindComparisonControls();
     return;
   }
@@ -190,7 +250,7 @@ function renderComparison(comparison: ComparisonResult | null = null) {
   comparisonPanel.innerHTML = `
     <div><span class="eyebrow">Published availability check</span><h3 id="published-comparison-title">${comparison.findings.length ? 'Published slots need review' : 'Published slots match expected times'}</h3><p>${comparison.matched} matched${comparison.findings.length ? ` · ${summary}` : ''}</p></div>
     <div class="comparison-findings">${comparison.findings.length ? `<ul>${comparison.findings.map((finding) => `<li>${findingLabel(finding)}</li>`).join('')}</ul>` : '<p>No missing, extra, shifted, or duration-changed slots were found.</p>'}</div>
-    <div class="compare-controls"><label class="file-label" for="actual-file">Choose another file</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
+    <div class="compare-controls"><label class="file-label" for="actual-file">Choose another UTC file</label><input id="actual-file" type="file" accept=".csv,text/csv,.ics,text/calendar"><button id="load-actual" class="button button--secondary" type="button">Compare published file</button><a class="text-link sample-file" href="/sample-published-availability.csv" download>Download sample published slots</a></div>`;
   bindComparisonControls();
 }
 
@@ -200,12 +260,13 @@ function bindComparisonControls() {
   input.addEventListener('change', () => { actualStatus.textContent = input.files?.[0] ? `${input.files[0].name} is ready to compare.` : ''; });
   button.addEventListener('click', async () => {
     const file = input.files?.[0];
-    if (!file || !currentResult || results.dataset.stale) { actualStatus.textContent = 'Choose a CSV or ICS file after running a current audit.'; return; }
+    if (!file || !currentResult || results.dataset.stale) { actualStatus.textContent = 'Choose a UTC spreadsheet or calendar file after running a current audit.'; return; }
     try {
       const slots = parsePublishedSlots(file.name, await file.text());
       renderComparison(comparePublishedSlots(currentResult, slots));
       actualStatus.textContent = `Compared ${slots.length} published slots in this browser.`;
     } catch (error) {
+      renderComparison();
       actualStatus.textContent = error instanceof Error ? error.message : 'The published file could not be read.';
     }
   });
@@ -259,7 +320,7 @@ function renderResults(config: AuditConfig, result: AuditResult) {
     <div class="table-heading">
       <div>
         <span class="eyebrow">Expected availability times</span>
-        <h3>Declared hours in each timezone</h3>
+        <h3>Expected times in each timezone</h3>
       </div>
       <p>A clock-change row is the first enabled working window after an offset change.</p>
     </div>

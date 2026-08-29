@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         main: resolve(root, 'index.html'),
         demo: resolve(root, 'demo/index.html'),
+        offline: resolve(root, 'offline.html'),
         notFound: resolve(root, '404.html'),
         privacy: resolve(root, 'privacy/index.html'),
         terms: resolve(root, 'terms/index.html'),

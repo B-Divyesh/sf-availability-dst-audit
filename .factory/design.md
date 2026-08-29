@@ -40,7 +40,7 @@ Desktop uses a two-column setup bench (configuration / interpretation), then a f
 
 - The primary sequence is numbered: **01 Define hours → 02 Choose test window → Run audit**.
 - Changes after a run mark results “out of date” until rerun; no hidden auto-computation.
-- Availability rows are explicit, repeatable controls. Empty days mean unavailable.
+- Weekdays contain explicit, repeatable window controls. Split days stay visually grouped, and empty days mean unavailable.
 - Results expose three layers: verdict, boundary summary, then auditable daily rows.
 - Focus is a two-pixel signal-green outline with offset. Buttons depress by 1px. Errors appear beside their cause and in an assertive live region.
 

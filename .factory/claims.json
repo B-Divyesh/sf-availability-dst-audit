@@ -1,10 +1,10 @@
 [
   {
     "id": "sample-audit",
-    "claim": "The sample shows weekday booking hours and the March 2026 London clock-change boundary.",
+    "claim": "The sample shows weekday booking hours, a split Wednesday, and the March 2026 London clock-change boundary.",
     "where": "Demo banner and landing action outcome",
     "test": "npm run test:claims -- --grep @claim:sample-audit",
-    "sandbox": "Fresh browser context at /?demo=1; assert completed London/New York rows and the boundary output."
+    "sandbox": "Fresh browser context at /?demo=1; assert 12 London/New York rows, the split Wednesday, and the boundary output."
   },
   {
     "id": "browser-timezone-rules",
@@ -22,17 +22,17 @@
   },
   {
     "id": "exports",
-    "claim": "Export the expected availability file as CSV or UTC ICS.",
+    "claim": "Export the expected availability file as a CSV spreadsheet or UTC calendar file.",
     "where": "Landing fact and export controls",
     "test": "npm run test:claims -- --grep @claim:exports",
-    "sandbox": "Fresh demo; download both files and inspect CSV rows and ICS UTC events."
+    "sandbox": "Fresh demo; download both files and inspect spreadsheet rows and UTC calendar events."
   },
   {
     "id": "time-edge-cases",
-    "claim": "The audit marks missing and repeated local times; missing times are omitted from ICS and repeated times use the earlier occurrence.",
+    "claim": "The audit marks missing and repeated local times; missing times are omitted from calendar exports and repeated times use the earlier occurrence.",
     "where": "Repeated and missing time help",
     "test": "npm run test:claims -- --grep @claim:time-edge-cases",
-    "sandbox": "Fresh demo; configure London spring and fall boundary Sundays and inspect the result and ICS downloads."
+    "sandbox": "Fresh demo; configure London spring and fall boundary Sundays and inspect the result and calendar downloads."
   },
   {
     "id": "comparison-date-change",
@@ -43,10 +43,17 @@
   },
   {
     "id": "published-comparison",
-    "claim": "Import UTC CSV or ICS slots to find missing, extra, shifted, and duration-changed published availability.",
+    "claim": "Import UTC spreadsheet or calendar slots to find missing, extra, shifted, and duration-changed published availability.",
     "where": "Published availability check and How the audit works",
     "test": "npm run test:claims -- --grep @claim:published-comparison",
-    "sandbox": "Fresh demo; assert the supplied published-slot sample has all four finding kinds and upload a CSV."
+    "sandbox": "Fresh demo; assert all four finding kinds, compare valid CSV and UTC calendar data, and reject zoned or floating calendar times."
+  },
+  {
+    "id": "multiple-daily-windows",
+    "claim": "Each weekday can include multiple working windows, and every window appears in the audit and exports.",
+    "where": "Audit setup, demo sample, README",
+    "test": "npm run test:claims -- --grep @claim:multiple-daily-windows",
+    "sandbox": "Fresh demo; assert two Wednesday windows, add and remove a third, rerun, and inspect the CSV output."
   },
   {
     "id": "demo-isolation",

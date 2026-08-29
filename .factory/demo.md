@@ -1,8 +1,8 @@
 # Demo sandbox
 
-Open <https://availability-dst-audit.sociobot.in/demo/> to load a completed London 09:00–17:00 / New York audit for 23 March–3 April 2026. `?demo=1` is a supported direct demo entry. The completed report, its one 29 March clock-change row, first sample table rows, and a local published-slot comparison appear before the setup form. CSV and ICS downloads work in the sandbox.
+Open <https://availability-dst-audit.sociobot.in/demo/> to load a completed London/New York audit for 23 March–3 April 2026. `?demo=1` is a supported direct demo entry. Monday, Tuesday, Thursday, and Friday use 09:00–17:00. Wednesday uses 09:00–12:00 and 13:00–17:00, proving split-day support. The 12-row report, one 29 March clock-change row, first table rows, and local published-slot comparison appear before setup. Spreadsheet and calendar downloads work in the sandbox.
 
-The demo seeds a realistic published-slot CSV with one missing, one extra, one shifted, and one duration-changed slot. It is available for download at `/sample-published-availability.csv`; importing a CSV or ICS always happens in-browser.
+The demo seeds a realistic published-slot spreadsheet with one missing, one extra, one shifted, and one duration-changed slot. It is available at `/sample-published-availability.csv`; importing spreadsheet or calendar files always happens in-browser. Calendar events must use UTC timestamps ending in `Z`.
 
 Demo mode writes only `demo:availability-dst-audit:config:v1` in local storage. It never reads the real `availability-dst-audit:config:v1` key. **Reset demo** removes and recreates the demo key. **Start for real** removes the demo key before returning to the normal audit.
 
