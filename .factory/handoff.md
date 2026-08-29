@@ -1,38 +1,36 @@
-# Availability DST Audit — polish 2 handoff
+# Availability DST Audit — adversarial review 3 handoff
 
-Work order: availability-dst-audit-polish-2
-Base: 56c8d3c8de8819e18ebd342b846b6c94013e9f50
-Repair commits: 5edeec3 and de59043
-Deployed revision: de59043
+Work order: `availability-dst-audit-review-3`
 
-## Delivered
+Reviewed revision: `596393ae61ad99b472c61f2aece8fa648224407c`
 
-- Corrected DST transition detection so only the first enabled post-change window is boundary-marked.
-- Made the sample demo a complete canonical /demo/ route and put the completed audit, boundary summary, sample rows, reset, and real-mode exit in its first screen.
-- Added local UTC CSV/ICS published-availability import with missing, extra, shifted, and duration comparison.
-- Added complete claim coverage, a real demo metadata document, route focus/announcement behavior, revised plain language, and updated demo, README, catalog, and copy records.
-- Preserved the dark pixel-console visual system and original observatory artwork.
+Live URL: <https://availability-dst-audit.sociobot.in/>
 
-## Run and verify
+Verdict: **FAIL**
 
-Use Node.js 20 or later:
+## Done
+
+- Performed cold first-read checks in fresh 390 × 844 and 1440 × 900 Chromium contexts.
+- Audited every landing and README copy unit, the one-click demo, storage isolation/reset, live requests, offline reload, metadata, routes, Back/focus behavior, links, accessibility, and visual identity.
+- Ran every earlier review/polish finding against the current live site and source.
+- Ran every registered claim command after a clean dependency install and production build.
+- Recorded the full evidence and seven findings in `.factory/review-3.md`. Product code was not changed.
+
+## Verification run
 
     npm ci
     npm test
     npm run build
+    # each exact command in .factory/claims.json
     npm run test:e2e
 
-Run each exact command in .factory/claims.json. The static deployment output is dist/.
+Results: unit tests 8/8 passed; build produced `dist/`; all eleven registered commands completed 2/2 in desktop/mobile; the combined Playwright suite passed 34/34. Live Axe scans found zero serious/critical issues on Root, Demo, Privacy, Terms, and Offline. Live demo/offline request logs were same-origin only.
 
-## Evidence
+## Known gaps and next steps
 
-- Final clean clone at de59043: npm test passed 8/8; npm run build passed; every one of 11 claim commands passed on desktop and 390px; npm run test:e2e passed 34/34.
-- Local verify-url.sh passed for root and demo. Both had a title, lang=en, exactly one h1, main, alt-complete images, and no console errors.
-- Browser Axe integration found zero serious/critical violations. The standalone Axe CLI could not launch Selenium Chrome in this container, so the executed Playwright Axe scan is the accessibility evidence.
-- Deployment f4d8bb9f-408f-4587-9661-2daace520b8d succeeded through /opt/fleet/lib/deploy-static.sh.
-- Cold live checks: root, demo, Privacy, and Terms returned 200. The live demo had title Demo — Availability DST Audit, banner, 10 rows, one boundary row on 30 March, no boundary on 31 March, and 1 missing/extra/shifted/duration comparison result. Privacy focused its h1 on route load. The designed missing route returned 404 with the product title, h1, main, and demo link.
-- Screenshots and machine-readable checks: .factory/evidence/polish-2/live/.
+- Blocking: timezone-qualified ICS events are interpreted as UTC and can be falsely reported as exact matches; the registered comparison test covers CSV but not ICS.
+- Major: many 390 px touch targets are shorter than 44 px.
+- Major: `/offline.html` lacks the shared metadata, navigation, footer, and plain heading.
+- Minor: three copy/terminology issues and lack of multiple daily windows remain.
 
-## Known gaps
-
-None. The standalone Axe CLI limitation is environmental only; equivalent Playwright Axe scans passed.
+See `.factory/review-3.md` for exact quotes, reproduction evidence, rewrites, and fixes.
