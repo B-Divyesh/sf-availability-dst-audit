@@ -244,13 +244,14 @@ footer p { margin: 6px 0 0; }
   .compare-controls .button { width: 100%; }
   .demo-mode .results-section { padding-top: 20px; padding-bottom: 32px; }
   .demo-mode .results-head { margin-bottom: 12px; }
+  .demo-mode .results-head > div:first-child { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .demo-mode .verdict { padding: 16px; }
   .demo-mode .verdict h2 { font-size: 1.35rem; }
   .demo-mode .boundary-summary { margin: 12px 0 18px; gap: 10px; }
   .demo-mode .boundary-summary h3 { margin: 2px 0; font-size: 15px; }
   .demo-mode .boundary-summary ul { font-size: 12px; }
   .demo-mode .table-heading { align-items: flex-start; }
-  .demo-mode .table-heading p { max-width: none; }
+  .demo-mode .table-heading p { display: none; }
   footer { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
   .asset-note { grid-column: 1; }
 }
