@@ -81,8 +81,7 @@ h1 em { color: var(--signal); font-style: normal; }
 .hero-art picture { display: block; position: relative; clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); border: 1px solid var(--scanline); background: #050609; }
 .hero-art picture::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px #000, inset 0 0 70px #000; pointer-events: none; }
 .hero-art img { aspect-ratio: 3 / 2; object-fit: cover; }
-.hero-art figcaption { display: flex; gap: 12px; margin-top: 12px; color: var(--mist); font: 11px var(--mono); }
-.hero-art figcaption span { color: var(--boundary); }
+.hero-art figcaption { margin-top: 12px; color: var(--mist); font: 11px var(--mono); }
 
 .setup-section, .results-section, .method-section { padding: 88px max(24px, calc((100vw - var(--max)) / 2 + 24px)); }
 .setup-section { background-color: var(--ink-900); background-image: linear-gradient(var(--scanline) 1px, transparent 1px), linear-gradient(90deg, var(--scanline) 1px, transparent 1px); background-size: 48px 48px; background-position: -1px -1px; }

@@ -38,6 +38,12 @@ test('runs a 2026 DST audit, persists config, and exports fixtures', async ({ pa
   }
 });
 
+test('landing illustration caption gives useful audit context without a decorative figure label', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.hero-art figcaption')).toHaveText('Clock changes can shift booking hours. Check the dates that change.');
+  await expect(page.locator('.hero-art figcaption')).not.toContainText('FIG');
+});
+
 test('replaces stale audit output with an accessible rerun state', async ({ page }) => {
   await page.goto('/');
   await page.locator('#organizer-zone').fill('Europe/London');
@@ -112,7 +118,7 @@ test('offline fallback uses the shared route skeleton and plain recovery copy', 
   await expect(page.getByRole('navigation')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Privacy' }).last()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
-  await expect(page.getByText(/Built by Param Factory · build polish-3/)).toBeVisible();
+  await expect(page.getByText(/Built by Param Factory · build polish-4/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Reconnect, then reload the audit' })).toHaveAttribute('href', '/');
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);

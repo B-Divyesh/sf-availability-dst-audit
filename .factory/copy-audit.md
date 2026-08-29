@@ -1,4 +1,4 @@
-# Copy audit — 29 August 2026, polish round 3
+# Copy audit — 29 August 2026, polish round 4
 
 Landing, demo, result, empty, stale, error, import, and offline states were read from the rendered production build. Counts use whitespace-delimited words. No sentence exceeds 22 words. No banned marketing term appears.
 
@@ -11,6 +11,7 @@ Landing, demo, result, empty, stale, error, import, and offline states were read
 | Fact | 4 | Runs in your browser |
 | Fact | 2 | No account |
 | Fact | 5 | Export spreadsheet or calendar files |
+| Illustration caption | 11 | Clock changes can shift booking hours. Check the dates that change. |
 | Setup heading | 6 | Set working hours and test dates |
 | Setup | 5 | Enter the organizer’s local hours. |
 | Setup | 9 | Pick a second timezone to compare the booking time. |
