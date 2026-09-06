@@ -77,6 +77,22 @@ describe('audit matrix', () => {
     expect(errors.join(' ')).toMatch(/Enable at least one/);
   });
 
+  it('reports the displayed number of an invalid added window', () => {
+    const schedule = config().schedule.map((day) => day.weekday === 3
+      ? {
+          ...day,
+          windows: [
+            { start: '09:00', end: '12:00' },
+            { start: '13:00', end: '17:00' },
+            { start: '', end: '' },
+          ],
+        }
+      : day);
+    const errors = validateConfig(config({ schedule }));
+    expect(errors).toContain('Wednesday window 3 must end after it starts.');
+    expect(errors).not.toContain('Wednesday window 1 must end after it starts.');
+  });
+
   it('produces reviewable CSV and UTC ICS fixtures', () => {
     const input = config({ startDate: '2026-03-30', endDate: '2026-03-30' });
     const result = runAudit(input);

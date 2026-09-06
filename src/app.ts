@@ -264,7 +264,7 @@ function bindComparisonControls() {
     try {
       const slots = parsePublishedSlots(file.name, await file.text());
       renderComparison(comparePublishedSlots(currentResult, slots));
-      actualStatus.textContent = `Compared ${slots.length} published slots in this browser.`;
+      actualStatus.textContent = `Compared ${slots.length} published slot${slots.length === 1 ? '' : 's'} in this browser.`;
     } catch (error) {
       renderComparison();
       actualStatus.textContent = error instanceof Error ? error.message : 'The published file could not be read.';

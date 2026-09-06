@@ -65,6 +65,48 @@ test('replaces stale audit output with an accessible rerun state', async ({ page
   expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);
 });
 
+test('an empty added window reports its displayed window number and can be corrected', async ({ page }) => {
+  await page.goto('/demo/');
+  await expect(page.getByRole('heading', { name: 'No missing or repeated times found' })).toBeVisible();
+  const wednesday = page.locator('.hours-row[data-weekday="3"]');
+  await wednesday.getByRole('button', { name: 'Add working window' }).click();
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  const alert = page.locator('#form-status');
+  await expect(alert).toBeFocused();
+  await expect(alert).toContainText('Wednesday window 3 must end after it starts.');
+  await expect(alert).not.toContainText('Wednesday window 1 must end after it starts.');
+
+  const added = wednesday.locator('.time-window').nth(2);
+  await added.locator('input[data-field="start"]').fill('18:00');
+  await added.locator('input[data-field="end"]').fill('19:00');
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  await expect(page.locator('tbody tr').filter({ hasText: '2026-03-25' })).toHaveCount(3);
+  await expect(page.getByText('Audit complete: 14 expected windows computed.')).toBeVisible();
+});
+
+test('invalid zones and date limits explain recovery and accept the 371-day boundary', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#organizer-zone').fill('EST');
+  await page.locator('#start-date').fill('2026-06-30');
+  await page.locator('#end-date').fill('2026-06-29');
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  const alert = page.locator('#form-status');
+  await expect(alert).toBeFocused();
+  await expect(alert).toContainText('Enter a valid organizer timezone name, such as Europe/London.');
+  await expect(alert).toContainText('The end date must be on or after the start date.');
+
+  await page.locator('#organizer-zone').fill('Europe/London');
+  await page.locator('#start-date').fill('2026-01-01');
+  await page.locator('#end-date').fill('2027-01-07');
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  await expect(alert).toContainText('Keep the audit window to 371 days or fewer.');
+
+  await page.locator('#end-date').fill('2027-01-06');
+  await page.getByRole('button', { name: 'Run audit' }).click();
+  await expect(page.getByRole('heading', { name: 'No missing or repeated times found' })).toBeVisible();
+  await expect(page.getByText('Audit complete: 265 expected windows computed.')).toBeVisible();
+});
+
 test('legal pages expose semantic essentials', async ({ page }) => {
   for (const path of ['/privacy/', '/terms/']) {
     await page.goto(path);
@@ -104,6 +146,8 @@ test('product-owned 404 provides a semantic way back', async ({ page }) => {
   await expect(page.locator('main')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'That page was not found' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open the sample audit' })).toHaveAttribute('href', '/demo/');
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);
 });
 
 test('offline fallback uses the shared route skeleton and plain recovery copy', async ({ page }) => {
@@ -118,7 +162,7 @@ test('offline fallback uses the shared route skeleton and plain recovery copy', 
   await expect(page.getByRole('navigation')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Privacy' }).last()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
-  await expect(page.getByText(/Built by Param Factory · build polish-4/)).toBeVisible();
+  await expect(page.getByText(/Built by Param Factory · build repair-2/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Reconnect, then reload the audit' })).toHaveAttribute('href', '/');
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter((issue) => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([]);

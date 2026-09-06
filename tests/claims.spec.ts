@@ -20,6 +20,10 @@ test('@claim:sample-audit the completed sample shows weekday availability and th
   await openDemo(page, '/?demo=1');
   await expect(page.locator('tbody tr')).toHaveCount(12);
   await expect(page.getByText('2026-03-29: UTC+00:00 → UTC+01:00')).toBeVisible();
+  const wednesday = page.locator('tbody tr').filter({ hasText: '2026-03-25' });
+  await expect(wednesday).toHaveCount(2);
+  await expect(wednesday.nth(0)).toContainText('09:00–12:00');
+  await expect(wednesday.nth(1)).toContainText('13:00–17:00');
   const monday = page.locator('tbody tr').filter({ hasText: '2026-03-30' });
   await expect(monday).toContainText('09:00–17:00');
   await expect(monday).toContainText('08:00–16:00');
@@ -30,9 +34,15 @@ test('@claim:browser-timezone-rules browser timezone rules keep local hours fixe
   await openDemo(page);
   const before = page.locator('tbody tr').filter({ hasText: '2026-03-27' });
   const after = page.locator('tbody tr').filter({ hasText: '2026-03-30' });
-  await expect(before).toContainText('09:00–17:00');
-  await expect(after).toContainText('09:00–17:00');
-  await expect(after).toContainText('08:00–16:00');
+  await expect(before.locator('td').nth(1).locator('.time-value')).toHaveText('09:00–17:00');
+  await expect(after.locator('td').nth(1).locator('.time-value')).toHaveText('09:00–17:00');
+  await expect(before.locator('td').nth(2).locator('.time-value')).toHaveText('09:00–17:00');
+  await expect(after.locator('td').nth(2).locator('.time-value')).toHaveText('08:00–16:00');
+  const beforeUtc = await before.locator('td').nth(2).innerText();
+  const afterUtc = await after.locator('td').nth(2).innerText();
+  expect(beforeUtc).toContain('09:00–17:00');
+  expect(afterUtc).toContain('08:00–16:00');
+  expect(afterUtc).not.toBe(beforeUtc);
 });
 
 test('@claim:first-boundary-window only the first enabled working window after a clock change is marked', async ({ page }) => {
@@ -134,7 +144,18 @@ test('@claim:multiple-daily-windows split working days are audited, exported, ad
   await added.locator('input[data-field="end"]').fill('19:00');
   await page.getByRole('button', { name: 'Run audit' }).click();
   await expect(page.locator('tbody tr').filter({ hasText: '2026-03-25' })).toHaveCount(3);
-  expect(await downloadText(page, 'Export CSV spreadsheet')).toContain('18:00–19:00');
+  const csvText = await downloadText(page, 'Export CSV spreadsheet');
+  for (const window of ['09:00–12:00', '13:00–17:00', '18:00–19:00']) expect(csvText).toContain(window);
+  const calendarText = await downloadText(page, 'Export calendar (.ics)');
+  for (const start of [
+    'DTSTART:20260325T090000Z',
+    'DTSTART:20260325T130000Z',
+    'DTSTART:20260325T180000Z',
+    'DTSTART:20260401T080000Z',
+    'DTSTART:20260401T120000Z',
+    'DTSTART:20260401T170000Z',
+  ]) expect(calendarText).toContain(start);
+  expect(calendarText.match(/BEGIN:VEVENT/g)).toHaveLength(14);
   await wednesday.getByRole('button', { name: 'Remove Wednesday window 3' }).click();
   await expect(wednesday.locator('.time-window')).toHaveCount(2);
 });
@@ -169,6 +190,15 @@ test('@claim:privacy-local complete demo and comparison flow makes no third-part
   page.on('request', (request) => requests.push(request.url()));
   await openDemo(page);
   await downloadText(page, 'Export CSV spreadsheet');
+  await downloadText(page, 'Export calendar (.ics)');
+  await page.locator('#actual-file').setInputFiles({
+    name: 'published.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('start_utc,end_utc\n2026-03-23T09:00:00Z,2026-03-23T17:00:00Z\n'),
+  });
+  await page.getByRole('button', { name: 'Compare published file' }).click();
+  await expect(page.locator('#actual-status')).toContainText('Compared 1 published slot in this browser.');
+  await expect(page.locator('#published-comparison')).toContainText('Missing published slot');
   await page.getByRole('button', { name: 'Reset demo' }).click();
   expect(requests.every((url) => new URL(url).origin === 'http://127.0.0.1:4173')).toBe(true);
 });
@@ -183,6 +213,11 @@ test('@claim:offline-reload sample audit reloads after the first visit without n
   });
   await openDemo(page);
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
+  expect(await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.update();
+    return Boolean(registration.active);
+  })).toBe(true);
   await page.reload();
   await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
   await context.setOffline(true);

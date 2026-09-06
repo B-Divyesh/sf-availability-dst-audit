@@ -148,10 +148,12 @@ export function validateConfig(config: AuditConfig): string[] {
   if (!enabled.length) errors.push('Enable at least one day of weekly availability.');
   for (const day of enabled) {
     if (!day.windows.length) errors.push(`Add at least one working window for ${weekdayLong[day.weekday]}.`);
-    const ordered = [...day.windows].sort((a, b) => a.start.localeCompare(b.start));
+    const ordered = day.windows
+      .map((window, displayedIndex) => ({ ...window, displayedIndex }))
+      .sort((a, b) => a.start.localeCompare(b.start));
     ordered.forEach((window, index) => {
       if (!window.start || !window.end || window.start >= window.end) {
-        errors.push(`${weekdayLong[day.weekday]} window ${index + 1} must end after it starts.`);
+        errors.push(`${weekdayLong[day.weekday]} window ${window.displayedIndex + 1} must end after it starts.`);
       }
       if (index > 0 && ordered[index - 1]!.end > window.start) {
         errors.push(`${weekdayLong[day.weekday]} working windows must not overlap.`);

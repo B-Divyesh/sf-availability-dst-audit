@@ -1,6 +1,6 @@
-# Copy audit — 29 August 2026, polish round 4
+# Copy audit — 6 September 2026, repair 2
 
-Landing, demo, result, empty, stale, error, import, and offline states were read from the rendered production build. Counts use whitespace-delimited words. No sentence exceeds 22 words. No banned marketing term appears.
+Landing, demo, result, empty, stale, error, import, offline, privacy, and terms states were read from the production build. Counts use whitespace-delimited words. No sentence exceeds 22 words. No banned marketing term appears.
 
 | Location | Words | Copy |
 | --- | ---: | --- |
@@ -44,11 +44,26 @@ Landing, demo, result, empty, stale, error, import, and offline states were read
 | Demo reset | 7 | Demo reset to the original London–New York sample. |
 | Demo storage | 14 | Sample changes stay in demo storage and are discarded when you start for real. |
 | Form error | 9 | Enter a valid organizer timezone name, such as Europe/London. |
+| Added-window error | 9 | Wednesday window 3 must end after it starts. |
 | Calendar error | 19 | This calendar uses local or timezone-qualified times. Export it again with UTC start and end times ending in Z. |
+| File comparison | 7 | Compared 1 published slot in this browser. |
 | Offline H1 | 4 | The audit is offline |
 | Offline state | 9 | This page was not saved during an earlier visit. |
 | Offline recovery | 17 | Reconnect to load it. A sample audit works offline after you open the demo once while connected. |
 | Offline action | 5 | Reconnect, then reload the audit |
+
+## Legal-page sentences changed in repair 2
+
+| Location | Words | Copy |
+| --- | ---: | --- |
+| Privacy data removal | 5 | Use your browser’s site-data controls for availability-dst-audit.sociobot.in. |
+| Privacy contact | 12 | Use the Source link below to raise a question in the public repository. |
+| Terms warranty | 6 | The tool is provided as is. |
+| Terms warranty | 11 | The maintainers do not promise uninterrupted availability or error-free timezone data. |
+| Terms license | 7 | Review the source repository for license details. |
+| Terms changes | 8 | Check this page for the current terms. |
+
+The prior profiling, future-update, site-data outcome, free-price, and MIT-availability statements were removed because the browser sandbox cannot prove them.
 
 ## Terminology table
 

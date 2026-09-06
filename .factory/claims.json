@@ -4,14 +4,14 @@
     "claim": "The sample shows weekday booking hours, a split Wednesday, and the March 2026 London clock-change boundary.",
     "where": "Demo banner and landing action outcome",
     "test": "npm run test:claims -- --grep @claim:sample-audit",
-    "sandbox": "Fresh browser context at /?demo=1; assert 12 London/New York rows, the split Wednesday, and the boundary output."
+    "sandbox": "Fresh browser context at /?demo=1; assert 12 London/New York rows, both split-Wednesday windows, and the boundary output."
   },
   {
     "id": "browser-timezone-rules",
     "claim": "The browser applies selected timezone rules while local working hours remain fixed.",
     "where": "How the audit works",
     "test": "npm run test:claims -- --grep @claim:browser-timezone-rules",
-    "sandbox": "Fresh demo; assert London local hours stay 09:00–17:00 while UTC changes after DST."
+    "sandbox": "Fresh demo; assert London local hours stay 09:00–17:00 while UTC changes from 09:00–17:00 to 08:00–16:00."
   },
   {
     "id": "first-boundary-window",
@@ -53,7 +53,7 @@
     "claim": "Each weekday can include multiple working windows, and every window appears in the audit and exports.",
     "where": "Audit setup, demo sample, README",
     "test": "npm run test:claims -- --grep @claim:multiple-daily-windows",
-    "sandbox": "Fresh demo; assert two Wednesday windows, add and remove a third, rerun, and inspect the CSV output."
+    "sandbox": "Fresh demo; assert two Wednesday windows, add and remove a third, rerun, and inspect every window in CSV and calendar exports."
   },
   {
     "id": "demo-isolation",
@@ -74,7 +74,7 @@
     "claim": "The audit runs without an account and exports or compares files in the browser without third-party requests.",
     "where": "Landing facts, published availability check, and Privacy",
     "test": "npm run test:claims -- --grep @claim:privacy-local",
-    "sandbox": "Record every request throughout fresh demo, export, comparison, and reset flow; allow only product origin."
+    "sandbox": "Record every request throughout fresh demo, both exports, an uploaded-file comparison, and reset; allow only product origin."
   },
   {
     "id": "offline-reload",
